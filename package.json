@@ -2,10 +2,10 @@
   "name": "barbershop-api",
   "version": "1.0.0",
   "description": "A RESTful API for managing barbershop services, appointments, and users.",
-  "main": "app.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
     "migrate": "sequelize-cli db:migrate",
     "seed": "sequelize-cli db:seed:all",
     "rollback": "sequelize-cli db:migrate:undo",
