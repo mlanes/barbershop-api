@@ -1,58 +1,72 @@
-const { Barbershop, BarbershopOpenDay, User } = require('../../../models');
+const { Barbershop, BarbershopOpenDay } = require('../../../models');
+const ApiError = require('../../../utils/errors/api-error');
+const logger = require('../../../utils/logger');
+const { validateRequiredFields, validateEmail, validatePhone, validateAvailability } = require('../../../utils/validators');
+const { successResponse, createdResponse } = require('../../../utils/response');
 
 /**
  * Get all barbershops
  */
-const getAllBarbershops = async (req, res) => {
+const getAllBarbershops = async (req, res, next) => {
   try {
     const barbershops = await Barbershop.findAll({
       where: { is_active: true },
       include: [{ model: BarbershopOpenDay }]
     });
     
-    res.json(barbershops);
+    successResponse(res, barbershops);
   } catch (error) {
-    console.error('Error fetching barbershops:', error);
-    res.status(500).json({ message: 'Error fetching barbershops' });
+    next(error);
   }
 };
 
 /**
  * Get barbershop by ID
  */
-const getBarbershopById = async (req, res) => {
+const getBarbershopById = async (req, res, next) => {
   try {
     const { id } = req.params;
     
     const barbershop = await Barbershop.findByPk(id, {
-      include: [
-        { model: BarbershopOpenDay }
-      ]
+      include: [{ model: BarbershopOpenDay }]
     });
     
     if (!barbershop) {
-      return res.status(404).json({ message: 'Barbershop not found' });
+      throw ApiError.notFound('Barbershop not found');
     }
     
-    res.json(barbershop);
+    successResponse(res, barbershop);
   } catch (error) {
-    console.error('Error fetching barbershop:', error);
-    res.status(500).json({ message: 'Error fetching barbershop' });
+    next(error);
   }
 };
 
 /**
  * Create a new barbershop
  */
-const createBarbershop = async (req, res) => {
+const createBarbershop = async (req, res, next) => {
   try {
-    const { 
-      name, 
-      address, 
-      email, 
-      phone, 
-      open_days 
-    } = req.body;
+    const { name, address, email, phone, open_days } = req.body;
+    
+    // Validate required fields
+    validateRequiredFields({ name, address, email, phone }, ['name', 'address', 'email', 'phone']);
+    validateEmail(email);
+    validatePhone(phone);
+    
+    // Validate open days if provided
+    if (open_days) {
+      if (!Array.isArray(open_days)) {
+        throw ApiError.badRequest('open_days must be an array');
+      }
+
+      open_days.forEach(day => {
+        validateAvailability({
+          day_of_week: day.day_of_week,
+          start_time: day.opening_time,
+          end_time: day.closing_time
+        });
+      });
+    }
     
     // Create barbershop
     const barbershop = await Barbershop.create({
@@ -63,7 +77,7 @@ const createBarbershop = async (req, res) => {
     });
     
     // Create open days if provided
-    if (open_days && Array.isArray(open_days)) {
+    if (open_days && open_days.length > 0) {
       const openDaysData = open_days.map(day => ({
         barbershop_id: barbershop.id,
         day_of_week: day.day_of_week,
@@ -74,40 +88,49 @@ const createBarbershop = async (req, res) => {
       await BarbershopOpenDay.bulkCreate(openDaysData);
     }
     
-    // Owner association is handled by your existing role system
+    logger.info('Barbershop created successfully', { barbershopId: barbershop.id });
     
     // Get the complete barbershop with associations
     const createdBarbershop = await Barbershop.findByPk(barbershop.id, {
       include: [{ model: BarbershopOpenDay }]
     });
     
-    res.status(201).json({
-      message: 'Barbershop created successfully',
-      barbershop: createdBarbershop
-    });
+    createdResponse(res, createdBarbershop, 'Barbershop created successfully');
   } catch (error) {
-    console.error('Error creating barbershop:', error);
-    res.status(500).json({ message: 'Error creating barbershop' });
+    next(error);
   }
 };
 
 /**
  * Update barbershop
  */
-const updateBarbershop = async (req, res) => {
+const updateBarbershop = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { 
-      name, 
-      address, 
-      email, 
-      phone, 
-      open_days 
-    } = req.body;
+    const { name, address, email, phone, open_days } = req.body;
     
     const barbershop = await Barbershop.findByPk(id);
     if (!barbershop) {
-      return res.status(404).json({ message: 'Barbershop not found' });
+      throw ApiError.notFound('Barbershop not found');
+    }
+    
+    // Validate fields if provided
+    if (email) validateEmail(email);
+    if (phone) validatePhone(phone);
+    
+    // Validate open days if provided
+    if (open_days) {
+      if (!Array.isArray(open_days)) {
+        throw ApiError.badRequest('open_days must be an array');
+      }
+
+      open_days.forEach(day => {
+        validateAvailability({
+          day_of_week: day.day_of_week,
+          start_time: day.opening_time,
+          end_time: day.closing_time
+        });
+      });
     }
     
     // Update barbershop fields
@@ -119,7 +142,7 @@ const updateBarbershop = async (req, res) => {
     });
     
     // Update open days if provided
-    if (open_days && Array.isArray(open_days)) {
+    if (open_days && open_days.length > 0) {
       // Remove existing open days
       await BarbershopOpenDay.destroy({ where: { barbershop_id: id } });
       
@@ -134,39 +157,39 @@ const updateBarbershop = async (req, res) => {
       await BarbershopOpenDay.bulkCreate(openDaysData);
     }
     
+    logger.info('Barbershop updated successfully', { barbershopId: id });
+    
     // Get the updated barbershop
     const updatedBarbershop = await Barbershop.findByPk(id, {
       include: [{ model: BarbershopOpenDay }]
     });
     
-    res.json({
-      message: 'Barbershop updated successfully',
-      barbershop: updatedBarbershop
-    });
+    successResponse(res, updatedBarbershop, 'Barbershop updated successfully');
   } catch (error) {
-    console.error('Error updating barbershop:', error);
-    res.status(500).json({ message: 'Error updating barbershop' });
+    next(error);
   }
 };
 
 /**
  * Delete barbershop
  */
-const deleteBarbershop = async (req, res) => {
+const deleteBarbershop = async (req, res, next) => {
   try {
     const { id } = req.params;
     
     const barbershop = await Barbershop.findByPk(id);
     if (!barbershop) {
-      return res.status(404).json({ message: 'Barbershop not found' });
+      throw ApiError.notFound('Barbershop not found');
     }
     
     // Soft delete by setting is_active to false
     await barbershop.update({ is_active: false });
-    res.json({ message: 'Barbershop deleted successfully' });
+    
+    logger.info('Barbershop deleted successfully', { barbershopId: id });
+    
+    successResponse(res, null, 'Barbershop deleted successfully');
   } catch (error) {
-    console.error('Error deleting barbershop:', error);
-    res.status(500).json({ message: 'Error deleting barbershop' });
+    next(error);
   }
 };
 

@@ -1,9 +1,13 @@
 const { Service, Barbershop, BarberService, Barber, User } = require('../../../models');
+const ApiError = require('../../../utils/errors/api-error');
+const logger = require('../../../utils/logger');
+const { validateServiceInput, validateRequiredFields } = require('../../../utils/validators');
+const { successResponse, createdResponse } = require('../../../utils/response');
 
 /**
  * Get all services for a barbershop
  */
-const getServicesByBarbershop = async (req, res) => {
+const getServicesByBarbershop = async (req, res, next) => {
   try {
     const { barbershopId } = req.params;
     
@@ -14,25 +18,27 @@ const getServicesByBarbershop = async (req, res) => {
       }
     });
     
-    res.json(services);
+    successResponse(res, services);
   } catch (error) {
-    console.error('Error fetching services:', error);
-    res.status(500).json({ message: 'Error fetching services' });
+    next(error);
   }
 };
 
 /**
  * Add a service to a barbershop
  */
-const addService = async (req, res) => {
+const addService = async (req, res, next) => {
   try {
     const { barbershopId } = req.params;
     const { name, duration, price } = req.body;
     
+    // Validate input
+    validateServiceInput({ name, duration, price });
+    
     // Verify barbershop exists
     const barbershop = await Barbershop.findByPk(barbershopId);
     if (!barbershop) {
-      return res.status(404).json({ message: 'Barbershop not found' });
+      throw ApiError.notFound('Barbershop not found');
     }
     
     // Create service
@@ -43,20 +49,21 @@ const addService = async (req, res) => {
       barbershop_id: barbershopId
     });
     
-    res.status(201).json({
-      message: 'Service added successfully',
-      service
+    logger.info('Service added successfully', { 
+      serviceId: service.id,
+      barbershopId 
     });
+    
+    createdResponse(res, service, 'Service added successfully');
   } catch (error) {
-    console.error('Error adding service:', error);
-    res.status(500).json({ message: 'Error adding service' });
+    next(error);
   }
 };
 
 /**
  * Update a service
  */
-const updateService = async (req, res) => {
+const updateService = async (req, res, next) => {
   try {
     const { barbershopId, serviceId } = req.params;
     const { name, duration, price } = req.body;
@@ -70,8 +77,12 @@ const updateService = async (req, res) => {
     });
     
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
+    
+    // Validate input if provided
+    if (duration) validateServiceInput({ duration });
+    if (price) validateServiceInput({ price });
     
     // Update service
     await service.update({
@@ -80,20 +91,21 @@ const updateService = async (req, res) => {
       price: price || service.price
     });
     
-    res.json({
-      message: 'Service updated successfully',
-      service
+    logger.info('Service updated successfully', { 
+      serviceId,
+      barbershopId 
     });
+    
+    successResponse(res, service, 'Service updated successfully');
   } catch (error) {
-    console.error('Error updating service:', error);
-    res.status(500).json({ message: 'Error updating service' });
+    next(error);
   }
 };
 
 /**
  * Delete a service
  */
-const deleteService = async (req, res) => {
+const deleteService = async (req, res, next) => {
   try {
     const { barbershopId, serviceId } = req.params;
     
@@ -106,27 +118,32 @@ const deleteService = async (req, res) => {
     });
     
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
     
-    // Delete service
-    // Soft delete by setting is_active to false instead of destroying the record
+    // Soft delete by setting is_active to false
     await service.update({ is_active: false });
     
-    res.json({ message: 'Service deleted successfully' });
+    logger.info('Service deleted successfully', { 
+      serviceId,
+      barbershopId 
+    });
+    
+    successResponse(res, null, 'Service deleted successfully');
   } catch (error) {
-    console.error('Error deleting service:', error);
-    res.status(500).json({ message: 'Error deleting service' });
+    next(error);
   }
 };
 
 /**
  * Assign service to barber
  */
-const assignServiceToBarber = async (req, res) => {
+const assignServiceToBarber = async (req, res, next) => {
   try {
     const { barbershopId, serviceId } = req.params;
     const { barber_id } = req.body;
+    
+    validateRequiredFields({ barber_id }, ['barber_id']);
     
     // Verify service exists and belongs to barbershop
     const service = await Service.findOne({
@@ -137,7 +154,19 @@ const assignServiceToBarber = async (req, res) => {
     });
     
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
+    }
+
+    // Verify barber exists and belongs to barbershop
+    const barber = await Barber.findOne({
+      where: {
+        id: barber_id,
+        barbershop_id: barbershopId
+      }
+    });
+
+    if (!barber) {
+      throw ApiError.notFound('Barber not found or not associated with this barbershop');
     }
     
     // Create barber-service association
@@ -146,37 +175,37 @@ const assignServiceToBarber = async (req, res) => {
       service_id: serviceId
     });
     
-    res.status(201).json({
-      message: 'Service assigned to barber successfully',
-      barberService
+    logger.info('Service assigned to barber successfully', { 
+      serviceId,
+      barberId: barber_id 
     });
+    
+    createdResponse(res, barberService, 'Service assigned to barber successfully');
   } catch (error) {
-    console.error('Error assigning service to barber:', error);
-    res.status(500).json({ message: 'Error assigning service to barber' });
+    next(error);
   }
 };
 
 /**
  * Get all services
  */
-const getAllServices = async (req, res) => {
+const getAllServices = async (req, res, next) => {
   try {
     const services = await Service.findAll({
       where: { is_active: true },
       include: [{ model: Barbershop, attributes: ['id', 'name'] }]
     });
     
-    res.json(services);
+    successResponse(res, services);
   } catch (error) {
-    console.error('Error fetching services:', error);
-    res.status(500).json({ message: 'Error fetching services' });
+    next(error);
   }
 };
 
 /**
  * Get service by ID
  */
-const getServiceById = async (req, res) => {
+const getServiceById = async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -185,27 +214,30 @@ const getServiceById = async (req, res) => {
     });
     
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
     
-    res.json(service);
+    successResponse(res, service);
   } catch (error) {
-    console.error('Error fetching service:', error);
-    res.status(500).json({ message: 'Error fetching service' });
+    next(error);
   }
 };
 
 /**
  * Create a service
  */
-const createService = async (req, res) => {
+const createService = async (req, res, next) => {
   try {
     const { name, duration, price, barbershop_id } = req.body;
+    
+    // Validate input
+    validateServiceInput({ name, duration, price });
+    validateRequiredFields({ barbershop_id }, ['barbershop_id']);
     
     // Verify barbershop exists
     const barbershop = await Barbershop.findByPk(barbershop_id);
     if (!barbershop) {
-      return res.status(404).json({ message: 'Barbershop not found' });
+      throw ApiError.notFound('Barbershop not found');
     }
     
     // Create service
@@ -216,28 +248,30 @@ const createService = async (req, res) => {
       barbershop_id
     });
     
-    res.status(201).json({
-      message: 'Service created successfully',
-      service
-    });
+    logger.info('Service created successfully', { serviceId: service.id });
+    
+    createdResponse(res, service, 'Service created successfully');
   } catch (error) {
-    console.error('Error creating service:', error);
-    res.status(500).json({ message: 'Error creating service' });
+    next(error);
   }
 };
 
 /**
  * Update service by ID
  */
-const updateServiceById = async (req, res) => {
+const updateServiceById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, duration, price } = req.body;
     
     const service = await Service.findByPk(id);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
+    
+    // Validate input if provided
+    if (duration) validateServiceInput({ duration });
+    if (price) validateServiceInput({ price });
     
     await service.update({
       name: name || service.name,
@@ -245,56 +279,63 @@ const updateServiceById = async (req, res) => {
       price: price || service.price
     });
     
-    res.json({
-      message: 'Service updated successfully',
-      service
-    });
+    logger.info('Service updated successfully', { serviceId: id });
+    
+    successResponse(res, service, 'Service updated successfully');
   } catch (error) {
-    console.error('Error updating service:', error);
-    res.status(500).json({ message: 'Error updating service' });
+    next(error);
   }
 };
 
 /**
  * Delete service by ID
  */
-const deleteServiceById = async (req, res) => {
+const deleteServiceById = async (req, res, next) => {
   try {
     const { id } = req.params;
     
     const service = await Service.findByPk(id);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
     
-    // Soft delete by setting is_active to false instead of destroying the record
+    // Soft delete by setting is_active to false
     await service.update({ is_active: false });
     
-    res.json({ message: 'Service deleted successfully' });
+    logger.info('Service deleted successfully', { serviceId: id });
+    
+    successResponse(res, null, 'Service deleted successfully');
   } catch (error) {
-    console.error('Error deleting service:', error);
-    res.status(500).json({ message: 'Error deleting service' });
+    next(error);
   }
 };
 
 /**
  * Assign service to barber by service ID
  */
-const assignServiceToBarberById = async (req, res) => {
+const assignServiceToBarberById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { barber_id } = req.body;
     
+    validateRequiredFields({ barber_id }, ['barber_id']);
+    
     // Verify service exists
     const service = await Service.findByPk(id);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
     
-    // Verify barber exists
-    const barber = await Barber.findByPk(barber_id);
+    // Verify barber exists and belongs to same barbershop
+    const barber = await Barber.findOne({
+      where: {
+        id: barber_id,
+        barbershop_id: service.barbershop_id
+      }
+    });
+    
     if (!barber) {
-      return res.status(404).json({ message: 'Barber not found' });
+      throw ApiError.notFound('Barber not found or not associated with the service\'s barbershop');
     }
     
     // Create barber-service association
@@ -303,27 +344,28 @@ const assignServiceToBarberById = async (req, res) => {
       service_id: id
     });
     
-    res.status(201).json({
-      message: 'Service assigned to barber successfully',
-      barberService
+    logger.info('Service assigned to barber successfully', { 
+      serviceId: id,
+      barberId: barber_id 
     });
+    
+    createdResponse(res, barberService, 'Service assigned to barber successfully');
   } catch (error) {
-    console.error('Error assigning service to barber:', error);
-    res.status(500).json({ message: 'Error assigning service to barber' });
+    next(error);
   }
 };
 
 /**
  * Get barbers who offer a specific service
  */
-const getBarbersByService = async (req, res) => {
+const getBarbersByService = async (req, res, next) => {
   try {
     const { id } = req.params;
     
     // Verify service exists
     const service = await Service.findByPk(id);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
     
     const barbers = await Barber.findAll({
@@ -344,10 +386,9 @@ const getBarbersByService = async (req, res) => {
       ]
     });
     
-    res.json(barbers);
+    successResponse(res, barbers);
   } catch (error) {
-    console.error('Error fetching barbers by service:', error);
-    res.status(500).json({ message: 'Error fetching barbers by service' });
+    next(error);
   }
 };
 
