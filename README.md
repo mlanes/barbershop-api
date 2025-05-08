@@ -4,11 +4,11 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 
 ## 🚀 Features
 
-- **Third-party Authentication** (Auth0 integration with JWT)
+- **AWS Cognito Authentication** (Token verification)
 - **Barbershop Management** (CRUD operations for barbershops and services)
 - **Appointment Booking System** (Schedule, update, and cancel appointments)
 - **Sequelize ORM** for PostgreSQL interactions
-- **Authorization Middleware** with Auth0
+- **Token Verification Middleware** for Cognito JWTs
 - **Environment Configuration** with dotenv
 
 ## 📁 Folder Structure
@@ -76,7 +76,7 @@ npm install
 cp .env.example .env
 ```
 
-Modify `.env` with your database credentials and Auth0 configuration.
+Modify `.env` with your database credentials and AWS Cognito configuration.
 
 4. **Setup PostgreSQL Database**
 
@@ -106,8 +106,8 @@ npm start    # For production mode
 ## 🔥 API Endpoints
 
 ### **Authentication**
-- `GET /api/v1/auth/login` → Initiate Auth0 login flow
-- `GET /api/v1/auth/callback` → Handle Auth0 callback
+- Authentication is handled by AWS Cognito in the frontend
+- Backend verifies Cognito JWT tokens
 
 ### **Users**
 - `GET /api/v1/users` → List all users (Admin only)
