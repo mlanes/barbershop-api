@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { expressjwt: jwt } = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
-const { User, Role } = require('../../models');
+const { User, Role } = require('../../../models');
 
 const region = process.env.COGNITO_REGION;
 const poolId = process.env.COGNITO_USER_POOL_ID;
