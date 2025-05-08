@@ -1,40 +1,52 @@
-const bcrypt = require('bcryptjs');
-
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
     id: {
       type: DataTypes.INTEGER,
-      autoIncrement: true,
       primaryKey: true,
+      autoIncrement: true
     },
     full_name: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: DataTypes.STRING(100),
+      allowNull: false
     },
     email: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
       validate: {
-        isEmail: true,
-      },
+        isEmail: true
+      }
     },
-    password_hash: {
-      type: DataTypes.STRING,
-      allowNull: false,
+    cognito_sub: {
+      type: DataTypes.TEXT,
+      unique: true
+    },
+    dob: {
+      type: DataTypes.DATEONLY,
+      allowNull: true
+    },
+    phone: {
+      type: DataTypes.STRING(20),
+      allowNull: true
+    },
+    role_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     },
     created_at: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-      allowNull: false,
-    },
+      defaultValue: DataTypes.NOW
+    }
   }, {
-    hooks: {
-      beforeCreate: async (user) => {
-        user.password_hash = await bcrypt.hash(user.password_hash, 10);
-      },
-    },
-    timestamps: false,
+    tableName: 'users',
+    timestamps: false
   });
+
+  User.associate = (models) => {
+    User.belongsTo(models.Role, { foreignKey: 'role_id' });
+    User.hasOne(models.Barber, { foreignKey: 'user_id' });
+    User.hasMany(models.Appointment, { foreignKey: 'customer_id', as: 'CustomerAppointments' });
+  };
+
   return User;
 };

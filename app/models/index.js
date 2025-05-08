@@ -1,5 +1,8 @@
+const fs = require('fs');
+const path = require('path');
 const { Sequelize } = require('sequelize');
 const config = require('../config/config');
+const basename = path.basename(__filename);
 
 const environment = process.env.NODE_ENV || 'development';
 const dbConfig = config[environment];
@@ -17,50 +20,28 @@ const sequelize = new Sequelize(dbConfig.db, {
 });
 
 const db = {};
-db.Sequelize = Sequelize;
+
+// 1. Read every .js file in models/ except this index.js
+fs
+  .readdirSync(__dirname)
+  .filter(file => (
+    file.indexOf('.') !== 0 &&
+    file !== basename &&
+    file.slice(-3) === '.js'
+  ))
+  .forEach(file => {
+    const defineModel = require(path.join(__dirname, file));
+    const model = defineModel(sequelize, Sequelize.DataTypes);
+    db[model.name] = model;
+  });
+
+// 2. Run all `associate()` methods to hook up relationships
+Object.values(db)
+  .filter(model => typeof model.associate === 'function')
+  .forEach(model => model.associate(db));
+
+// 3. Export
 db.sequelize = sequelize;
-
-db.Role = require('./role')(sequelize, Sequelize);
-db.User = require('./user')(sequelize, Sequelize);
-db.Barbershop = require('./barbershop')(sequelize, Sequelize);
-db.Barber = require('./barber')(sequelize, Sequelize);
-db.Service = require('./service')(sequelize, Sequelize);
-db.Appointment = require('./appointment')(sequelize, Sequelize);
-db.BarbershopOpenDays = require('./barbershopOpenDays')(sequelize, Sequelize);
-db.BarberAvailability = require('./barberAvailability')(sequelize, Sequelize);
-db.BarberServices = require('./barberServices')(sequelize, Sequelize);
-
-// Define associations
-db.Role.hasMany(db.User);
-db.User.belongsTo(db.Role);
-
-db.Barbershop.hasMany(db.Barber);
-db.Barber.belongsTo(db.Barbershop);
-
-db.Barbershop.hasMany(db.Service);
-db.Service.belongsTo(db.Barbershop);
-
-db.User.hasOne(db.Barber);
-db.Barber.belongsTo(db.User);
-
-db.User.hasMany(db.Appointment, { foreignKey: 'customer_id' });
-db.Appointment.belongsTo(db.User, { foreignKey: 'customer_id' });
-
-db.Barber.hasMany(db.Appointment);
-db.Appointment.belongsTo(db.Barber);
-
-db.Service.hasMany(db.Appointment);
-db.Appointment.belongsTo(db.Service);
-
-db.Barbershop.hasMany(db.BarbershopOpenDays);
-db.BarbershopOpenDays.belongsTo(db.Barbershop);
-
-db.Barber.hasMany(db.BarberAvailability);
-db.BarberAvailability.belongsTo(db.Barber);
-
-db.Barber.hasMany(db.BarberServices);
-db.BarberServices.belongsTo(db.Barber);
-db.Service.hasMany(db.BarberServices);
-db.BarberServices.belongsTo(db.Service);
+db.Sequelize = Sequelize;
 
 module.exports = db;
