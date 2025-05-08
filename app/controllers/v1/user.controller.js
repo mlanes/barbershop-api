@@ -50,8 +50,7 @@ const createUser = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      include: [{ model: Role, attributes: ['name'] }],
-      attributes: { exclude: ['password_hash'] }
+      include: [{ model: Role, attributes: ['name'] }]
     });
     
     const formattedUsers = users.map(user => ({
@@ -84,8 +83,7 @@ const getUserById = async (req, res) => {
     }
     
     const user = await User.findByPk(id, {
-      include: [{ model: Role, attributes: ['name'] }],
-      attributes: { exclude: ['password_hash'] }
+      include: [{ model: Role, attributes: ['name'] }]
     });
     
     if (!user) {

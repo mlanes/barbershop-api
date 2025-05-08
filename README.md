@@ -30,7 +30,7 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 |   ├── models/
 │   |   |── index.js                     # Loads all Sequelize models and sets associations
 │   |   ├── role.js                      # Defines Role model
-│   |   ├── user.js                      # Defines User model with password hashing
+│   |   ├── user.js                      # Defines User model
 │   |   ├── barbershop.js                # Defines Barbershop model
 │   |   ├── barber.js                    # Defines Barber model
 │   |   ├── service.js                   # Defines Service model
@@ -44,8 +44,6 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 │   │   ├── barbershopRoutes.js     # Defines barbershop management routes
 │   │   ├── appointmentRoutes.js    # Defines appointment-related routes
 │   │   ├── userRoutes.js           # Defines user-related routes
-│   ├── utils/
-│   │   ├── hashPassword.js         # Utility function to hash passwords before saving
 │   ├── express.js                  # Initializes Express app, applies middleware, sets up routes
 ├── .env                              # Stores environment variables like DB credentials, JWT secret
 ├── .gitignore                        # Ignores node_modules, .env, etc.
