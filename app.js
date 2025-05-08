@@ -9,11 +9,5 @@ db.sequelize.authenticate()
     console.log('Database connected successfully');
     return db.sequelize.sync();
   })
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('Database connection failed:', err);
-  });
+  .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
+  .catch(err => console.error('Database connection failed:', err));
