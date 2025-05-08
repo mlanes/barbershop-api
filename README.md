@@ -14,45 +14,55 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 ## 📁 Folder Structure
 
 ```
-├── migrations/
-├── seeders/
+├── migrations/                     # Database migrations
+│   └── 20250301082920-add_indexes_and_triggers.js
+├── seeders/                       # Database seed files
+│   ├── 20250301093730-insert_default_roles.js
+│   ├── 20250301093759-insert_default_users.js
+│   ├── 20250301093810-insert_initial_barber.js
+│   ├── 20250301093910-insert_initial_barbershop.js
+│   ├── 20250301093932-insert_initial_services.js
+│   ├── 20250301094005-insert_initial_barbershop_schedule.js
+│   └── 20250301094042-insert_initial_appointments.js
 ├── app/
 │   ├── config/
-│   │   ├── config.js                    # Sequelize and environment configuration
+│   │   └── config.js             # Sequelize and environment configuration
 │   ├── controllers/
-|   │   ├── v1/
-│   │   │   ├── authController.js       # Handles user authentication (register, login)
-│   │   │   ├── barbershopController.js # Handles barbershop-related operations
-│   │   │   ├── appointmentController.js # Manages appointment bookings, updates, cancellations
-│   │   │   ├── userController.js       # Manages user profiles and roles
-│   ├── middlewares/
-│   │   ├── authMiddleware.js       # Middleware to verify JWT tokens
-|   ├── models/
-│   |   |── index.js                     # Loads all Sequelize models and sets associations
-│   |   ├── role.js                      # Defines Role model
-│   |   ├── user.js                      # Defines User model
-│   |   ├── barbershop.js                # Defines Barbershop model
-│   |   ├── barber.js                    # Defines Barber model
-│   |   ├── service.js                   # Defines Service model
-│   |   ├── appointment.js               # Defines Appointment model
-│   |   ├── barberAvailability.js
-│   |   ├── barbershopOpenDays.js
-│   |   ├── barberServices.js
+│   │   └── v1/
+│   │       ├── appointment.controller.js   # Appointment management
+│   │       ├── auth.controller.js         # Token verification
+│   │       ├── barber.controller.js       # Barber management
+│   │       ├── barbershop.controller.js   # Barbershop operations
+│   │       ├── service.controller.js      # Service management
+│   │       └── user.controller.js         # User management
+│   ├── middleware/
+│   │   └── v1/
+│   │       └── auth.middleware.js    # JWT verification middleware
+│   ├── models/
+│   │   ├── index.js                  # Model loader and associations
+│   │   ├── appointment.js            # Appointment model
+│   │   ├── barber.js                 # Barber model
+│   │   ├── barber_availability.js    # Barber availability model
+│   │   ├── barber_service.js         # Barber-service relation model
+│   │   ├── barbershop.js             # Barbershop model
+│   │   ├── barbershop_open_day.js    # Barbershop schedule model
+│   │   ├── payment.js                # Payment model
+│   │   ├── role.js                   # Role model
+│   │   ├── service.js                # Service model
+│   │   └── user.js                   # User model
 │   ├── routes/
-│   │   ├── index.js                 # Route aggregator
-│   │   ├── v1/
-│   │   │   ├── auth.routes.js      # Defines authentication routes
-│   │   │   ├── barbershop.routes.js # Defines barbershop management routes
-│   │   │   ├── appointment.routes.js # Defines appointment-related routes
-│   │   │   ├── user.routes.js      # Defines user-related routes
-│   │   │   ├── barber.routes.js    # Defines barber management routes
-│   │   │   ├── service.routes.js   # Defines service management routes
-│   ├── express.js                  # Initializes Express app, applies middleware, sets up routes
-├── .env                              # Stores environment variables like DB credentials, JWT secret
-├── .gitignore                        # Ignores node_modules, .env, etc.
-├── app.js                            # Starts the Express server and syncs Sequelize
-├── package.json                      # Project dependencies and scripts
-├── README.md                         # Project documentation
+│   │   ├── index.js                  # Route aggregator
+│   │   └── v1/
+│   │       ├── appointment.routes.js  # Appointment routes
+│   │       ├── auth.routes.js        # Authentication routes
+│   │       ├── barber.routes.js      # Barber management routes
+│   │       ├── barbershop.routes.js  # Barbershop routes
+│   │       ├── service.routes.js     # Service management routes
+│   │       └── user.routes.js        # User management routes
+│   └── express.js                    # Express configuration and middleware
+├── app.js                            # Application entry point
+├── package.json                      # Project configuration and dependencies
+└── README.md                         # Project documentation
 ```
 
 ## 🛠️ Installation
