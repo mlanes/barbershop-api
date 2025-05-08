@@ -34,23 +34,4 @@ const createApp = () => {
     return app;
 };
 
-const startServer = async (port) => {
-    try {
-        // Test database connection
-        await db.sequelize.authenticate();
-        logger.info('Database connection established successfully');
-
-        const app = createApp();
-        
-        app.listen(port, () => {
-            logger.info(`Server is running on port ${port}`);
-        });
-
-        return app;
-    } catch (error) {
-        logger.error('Unable to start server:', error);
-        process.exit(1);
-    }
-};
-
-module.exports = { createApp, startServer, sequelize: db.sequelize };
+module.exports = { createApp, sequelize: db.sequelize };
