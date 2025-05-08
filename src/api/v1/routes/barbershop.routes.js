@@ -1,8 +1,8 @@
 const express = require('express');
-const { isAuthenticated, isOwner, isBarber } = require('../../middleware/v1/auth.middleware');
-const barbershopController = require('../../controllers/v1/barbershop.controller');
-const barberController = require('../../controllers/v1/barber.controller');
-const serviceController = require('../../controllers/v1/service.controller');
+const { isAuthenticated, isOwner, isBarber } = require('../middlewares/auth.middleware');
+const barbershopController = require('../controllers/barbershop.controller');
+const barberController = require('../controllers/barber.controller');
+const serviceController = require('../controllers/service.controller');
 
 const router = express.Router();
 

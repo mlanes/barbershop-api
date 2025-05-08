@@ -1,10 +1,10 @@
 const express = require('express');
-const authRoutes = require('./v1/auth.routes');
-const userRoutes = require('./v1/user.routes');
-const barbershopRoutes = require('./v1/barbershop.routes');
-const appointmentRoutes = require('./v1/appointment.routes');
-const barberRoutes = require('./v1/barber.routes');
-const serviceRoutes = require('./v1/service.routes');
+const authRoutes = require('./auth.routes');
+const userRoutes = require('./user.routes');
+const barbershopRoutes = require('./barbershop.routes');
+const appointmentRoutes = require('./appointment.routes');
+const barberRoutes = require('./barber.routes');
+const serviceRoutes = require('./service.routes');
 
 const router = express.Router();
 

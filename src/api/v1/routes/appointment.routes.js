@@ -1,6 +1,6 @@
 const express = require('express');
-const { isAuthenticated, isOwner, isBarber, isCustomer } = require('../../middleware/v1/auth.middleware');
-const appointmentController = require('../../controllers/v1/appointment.controller');
+const { isAuthenticated, isOwner, isBarber, isCustomer } = require('../middlewares/auth.middleware');
+const appointmentController = require('../controllers/appointment.controller');
 
 const router = express.Router();
 
