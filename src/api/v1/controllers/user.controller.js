@@ -1,22 +1,33 @@
 const { User, Role } = require('../../../models');
+const ApiError = require('../../../utils/errors/api-error');
+const logger = require('../../../utils/logger');
+const { validateUserInput, validateRole } = require('../../../utils/validators');
 
 /**
  * Create a new user with specified role (owner only)
  */
-const createUser = async (req, res) => {
+const createUser = async (req, res, next) => {
   try {
     const { full_name, email, cognito_sub, dob, phone, role_name } = req.body;
+
+    // Validate user input
+    validateUserInput({ full_name, email, phone, dob });
+    validateRole(role_name);
+
+    if (!cognito_sub) {
+      throw ApiError.badRequest('Cognito sub is required');
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      throw ApiError.badRequest('User already exists');
     }
 
     // Get role ID
     const userRole = await Role.findOne({ where: { name: role_name } });
     if (!userRole) {
-      return res.status(400).json({ message: 'Invalid role' });
+      throw ApiError.notFound('Role not found');
     }
 
     // Create new user
@@ -29,6 +40,8 @@ const createUser = async (req, res) => {
       role_id: userRole.id
     });
 
+    logger.info('User created successfully', { userId: newUser.id });
+
     res.status(201).json({
       message: 'User created successfully',
       user: {
@@ -39,15 +52,14 @@ const createUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('User creation error:', error);
-    res.status(500).json({ message: 'User creation failed', error: error.message });
+    next(error);
   }
 };
 
 /**
  * Get all users (for admin/owner)
  */
-const getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
       include: [{ model: Role, attributes: ['name'] }]
@@ -65,21 +77,20 @@ const getAllUsers = async (req, res) => {
     
     res.json(formattedUsers);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ message: 'Error fetching users' });
+    next(error);
   }
 };
 
 /**
  * Get user by ID
  */
-const getUserById = async (req, res) => {
+const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
     
     // Check if the requesting user has permission to view this user
     if (req.user.Role.name !== 'owner' && req.user.id !== parseInt(id)) {
-      return res.status(403).json({ message: 'Access denied' });
+      throw ApiError.forbidden('Access denied');
     }
     
     const user = await User.findByPk(id, {
@@ -87,7 +98,7 @@ const getUserById = async (req, res) => {
     });
     
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      throw ApiError.notFound('User not found');
     }
     
     res.json({
@@ -100,35 +111,37 @@ const getUserById = async (req, res) => {
       created_at: user.created_at
     });
   } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Error fetching user' });
+    next(error);
   }
 };
 
 /**
  * Update user
  */
-const updateUser = async (req, res) => {
+const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { full_name, phone, dob } = req.body;
     
     // Users can only update their own profile unless they're an owner
     if (req.user.Role.name !== 'owner' && req.user.id !== parseInt(id)) {
-      return res.status(403).json({ message: 'Access denied' });
+      throw ApiError.forbidden('Access denied');
     }
     
     const user = await User.findByPk(id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      throw ApiError.notFound('User not found');
     }
+
+    // Validate update data
+    const updateData = { full_name, phone, dob };
+    if (phone) validateUserInput({ phone });
+    if (dob) validateUserInput({ dob });
     
     // Update user fields
-    await user.update({
-      full_name: full_name || user.full_name,
-      phone: phone || user.phone,
-      dob: dob || user.dob
-    });
+    await user.update(updateData);
+    
+    logger.info('User updated successfully', { userId: user.id });
     
     res.json({
       message: 'User updated successfully',
@@ -141,28 +154,42 @@ const updateUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ message: 'Error updating user' });
+    next(error);
   }
 };
 
 /**
  * Delete user (admin/owner only)
  */
-const deleteUser = async (req, res) => {
+const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     
     const user = await User.findByPk(id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      throw ApiError.notFound('User not found');
+    }
+
+    // Don't allow deleting the last owner
+    if (user.Role.name === 'owner') {
+      const ownerCount = await User.count({
+        include: [{
+          model: Role,
+          where: { name: 'owner' }
+        }]
+      });
+
+      if (ownerCount <= 1) {
+        throw ApiError.badRequest('Cannot delete the last owner account');
+      }
     }
     
     await user.destroy();
+    logger.info('User deleted successfully', { userId: id });
+    
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Error deleting user' });
+    next(error);
   }
 };
 
