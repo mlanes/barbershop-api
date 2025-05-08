@@ -1,12 +1,12 @@
-require('dotenv').config();
 const path = require('path');
+const env = require('./env');
 const rootPath = path.normalize(__dirname + '/../..');
 
 const config = {
   local: {
-    dialect: process.env.DB_DIALECT,
+    dialect: env.DB_DIALECT,
     root: rootPath,
-    db: process.env.DB_URL,
+    db: env.DB_URL,
     dialectOptions: {
       ssl: false,
     },
@@ -14,9 +14,9 @@ const config = {
     logging: false,
   },
   development: {
-    dialect: process.env.DB_DIALECT,
+    dialect: env.DB_DIALECT,
     root: rootPath,
-    db: process.env.DB_URL,
+    db: env.DB_URL,
     dialectOptions: {
       ssl: false,
     },
@@ -24,9 +24,9 @@ const config = {
     logging: false,
   },
   production: {
-    dialect: process.env.DB_DIALECT,
+    dialect: env.DB_DIALECT,
     root: rootPath,
-    db: process.env.DB_URL,
+    db: env.DB_URL,
     dialectOptions: {
       ssl: { rejectUnauthorized: false },
     },
@@ -35,7 +35,7 @@ const config = {
   }
 };
 
-const env = process.env.NODE_ENV || 'development';
-console.log({ type: 'info', message: 'Current Database Config', data: config[env] });
+const environment = env.NODE_ENV;
+console.log({ type: 'info', message: 'Current Database Config', data: config[environment] });
 
 module.exports = config;

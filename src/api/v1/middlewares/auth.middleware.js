@@ -1,14 +1,11 @@
-require('dotenv').config();
 const { expressjwt: jwt } = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const { User, Role } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
+const env = require('../../../config/env');
 
-const region = process.env.COGNITO_REGION;
-const poolId = process.env.COGNITO_USER_POOL_ID;
-const clientId = process.env.COGNITO_APP_CLIENT_ID;
-const issuer = `https://cognito-idp.${region}.amazonaws.com/${poolId}`;
+const issuer = `https://cognito-idp.${env.COGNITO_REGION}.amazonaws.com/${env.COGNITO_USER_POOL_ID}`;
 
 const checkJwt = jwt({
   secret: jwksRsa.expressJwtSecret({
@@ -17,7 +14,7 @@ const checkJwt = jwt({
     jwksRequestsPerMinute: 5,
     jwksUri: `${issuer}/.well-known/jwks.json`
   }),
-  audience: clientId,
+  audience: env.COGNITO_APP_CLIENT_ID,
   issuer,
   algorithms: ['RS256']
 });
