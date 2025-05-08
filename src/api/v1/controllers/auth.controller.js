@@ -1,26 +1,29 @@
 const { User, Role } = require('../../../models');
-
-// This controller contains placeholder methods as actual authentication
-// is handled by AWS Cognito. These methods are for user registration in our database
-// after successful Cognito authentication.
+const ApiError = require('../../../utils/errors/api-error');
+const logger = require('../../../utils/logger');
 
 /**
  * Register user in our database after Cognito registration
  */
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
   try {
-    const { full_name, email, cognito_sub, dob, phone  } = req.body;
+    const { full_name, email, cognito_sub, dob, phone } = req.body;
+
+    // Validate required fields
+    if (!full_name || !email || !cognito_sub) {
+      throw ApiError.badRequest('Name, email and Cognito sub are required');
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      throw ApiError.badRequest('User already exists');
     }
 
     // Get role ID
     const userRole = await Role.findOne({ where: { name: 'customer' } });
     if (!userRole) {
-      return res.status(400).json({ message: 'Invalid role' });
+      throw ApiError.internal('Customer role not found');
     }
 
     // Create new user
@@ -33,39 +36,41 @@ const registerUser = async (req, res) => {
       role_id: userRole.id
     });
 
+    logger.info('User registered successfully', { userId: newUser.id });
+
     res.status(201).json({
       message: 'User registered successfully',
       user: {
         id: newUser.id,
         full_name: newUser.full_name,
         email: newUser.email,
-        role
+        role: userRole.name
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'Registration failed', error: error.message });
+    next(error);
   }
 };
 
 /**
  * Get current authenticated user information
  */
-const getCurrentUser = async (req, res) => {
+const getCurrentUser = async (req, res, next) => {
   try {
-    const user = req.user;
+    if (!req.user) {
+      throw ApiError.unauthorized('User not authenticated');
+    }
     
     res.json({
-      id: user.id,
-      full_name: user.full_name,
-      email: user.email,
-      dob: user.dob,
-      phone: user.phone,
-      role: user.Role.name
+      id: req.user.id,
+      full_name: req.user.full_name,
+      email: req.user.email,
+      dob: req.user.dob,
+      phone: req.user.phone,
+      role: req.user.Role.name
     });
   } catch (error) {
-    console.error('Error fetching current user:', error);
-    res.status(500).json({ message: 'Error fetching user information' });
+    next(error);
   }
 };
 
