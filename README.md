@@ -24,45 +24,63 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 │   ├── 20250301093932-insert_initial_services.js
 │   ├── 20250301094005-insert_initial_barbershop_schedule.js
 │   └── 20250301094042-insert_initial_appointments.js
-├── app/
-│   ├── config/
-│   │   └── config.js             # Sequelize and environment configuration
-│   ├── controllers/
+├── src/
+│   ├── api/
 │   │   └── v1/
-│   │       ├── appointment.controller.js   # Appointment management
-│   │       ├── auth.controller.js         # Token verification
-│   │       ├── barber.controller.js       # Barber management
-│   │       ├── barbershop.controller.js   # Barbershop operations
-│   │       ├── service.controller.js      # Service management
-│   │       └── user.controller.js         # User management
-│   ├── middleware/
-│   │   └── v1/
-│   │       └── auth.middleware.js    # JWT verification middleware
-│   ├── models/
-│   │   ├── index.js                  # Model loader and associations
-│   │   ├── appointment.js            # Appointment model
-│   │   ├── barber.js                 # Barber model
-│   │   ├── barber_availability.js    # Barber availability model
-│   │   ├── barber_service.js         # Barber-service relation model
-│   │   ├── barbershop.js             # Barbershop model
-│   │   ├── barbershop_open_day.js    # Barbershop schedule model
-│   │   ├── payment.js                # Payment model
-│   │   ├── role.js                   # Role model
-│   │   ├── service.js                # Service model
-│   │   └── user.js                   # User model
-│   ├── routes/
-│   │   ├── index.js                  # Route aggregator
-│   │   └── v1/
-│   │       ├── appointment.routes.js  # Appointment routes
-│   │       ├── auth.routes.js        # Authentication routes
-│   │       ├── barber.routes.js      # Barber management routes
-│   │       ├── barbershop.routes.js  # Barbershop routes
-│   │       ├── service.routes.js     # Service management routes
-│   │       └── user.routes.js        # User management routes
-│   └── express.js                    # Express configuration and middleware
-├── app.js                            # Application entry point
-├── package.json                      # Project configuration and dependencies
-└── README.md                         # Project documentation
+│   │       ├── controllers/       # API Controllers
+│   │       │   ├── appointment.controller.js
+│   │       │   ├── auth.controller.js
+│   │       │   ├── barber.controller.js
+│   │       │   ├── barbershop.controller.js
+│   │       │   ├── service.controller.js
+│   │       │   └── user.controller.js
+│   │       ├── middlewares/       # API Middlewares
+│   │       │   ├── auth.middleware.js
+│   │       │   └── error.middleware.js
+│   │       ├── routes/           # API Routes
+│   │       │   ├── appointment.routes.js
+│   │       │   ├── auth.routes.js
+│   │       │   ├── barber.routes.js
+│   │       │   ├── barbershop.routes.js
+│   │       │   ├── index.js
+│   │       │   ├── service.routes.js
+│   │       │   └── user.routes.js
+│   │       └── validators/       # Request Validators
+│   │           ├── appointment.js
+│   │           ├── barbershop.js
+│   │           ├── common.js
+│   │           ├── service.js
+│   │           └── user.js
+│   ├── config/                   # Configuration Files
+│   │   ├── database.js          # Database configuration
+│   │   ├── env.js              # Environment variables
+│   │   └── express.js          # Express configuration
+│   ├── models/                  # Database Models
+│   │   ├── entities/
+│   │   │   ├── appointment.js
+│   │   │   ├── barber.js
+│   │   │   ├── barber_availability.js
+│   │   │   ├── barber_service.js
+│   │   │   ├── barbershop.js
+│   │   │   ├── barbershop_open_day.js
+│   │   │   ├── payment.js
+│   │   │   ├── role.js
+│   │   │   ├── service.js
+│   │   │   └── user.js
+│   │   └── index.js            # Model initialization
+│   ├── services/               # Business Logic Services
+│   │   ├── appointment.service.js
+│   │   ├── auth.service.js
+│   │   ├── barbershop.service.js
+│   │   └── user.service.js
+│   ├── utils/                  # Utility Functions
+│   │   ├── errors/
+│   │   │   └── api-error.js
+│   │   ├── logger.js
+│   │   └── response.js
+│   └── app.js                  # Application Entry Point
+├── package.json                # Project Dependencies
+└── README.md                   # Project Documentation
 ```
 
 ## 🛠️ Installation
