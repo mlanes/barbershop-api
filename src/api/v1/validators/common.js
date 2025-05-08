@@ -1,4 +1,4 @@
-const ApiError = require('./errors/api-error');
+const ApiError = require('../../../utils/errors/api-error');
 
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,63 +64,6 @@ const validateRequiredFields = (obj, fields) => {
   return true;
 };
 
-const validateRole = (role) => {
-  const validRoles = ['customer', 'barber', 'owner'];
-  if (!validRoles.includes(role)) {
-    throw ApiError.badRequest('Invalid role');
-  }
-  return true;
-};
-
-const validateAppointmentStatus = (status) => {
-  const validStatuses = ['scheduled', 'completed', 'canceled'];
-  if (!validStatuses.includes(status)) {
-    throw ApiError.badRequest('Invalid appointment status');
-  }
-  return true;
-};
-
-const validateAvailability = (availability) => {
-  validateDayOfWeek(availability.day_of_week);
-  validateTime(availability.start_time);
-  validateTime(availability.end_time);
-
-  // Ensure end time is after start time
-  const [startHour, startMinute] = availability.start_time.split(':').map(Number);
-  const [endHour, endMinute] = availability.end_time.split(':').map(Number);
-  const startMinutes = startHour * 60 + startMinute;
-  const endMinutes = endHour * 60 + endMinute;
-
-  if (endMinutes <= startMinutes) {
-    throw ApiError.badRequest('End time must be after start time');
-  }
-
-  return true;
-};
-
-const validateUserInput = (user) => {
-  validateRequiredFields(user, ['full_name', 'email', 'phone']);
-  validateEmail(user.email);
-  validatePhone(user.phone);
-  if (user.dob) {
-    validateDate(user.dob);
-  }
-  return true;
-};
-
-const validateServiceInput = (service) => {
-  validateRequiredFields(service, ['name', 'duration', 'price']);
-  validateDuration(service.duration);
-  validatePrice(service.price);
-  return true;
-};
-
-const validateAppointmentInput = (appointment) => {
-  validateRequiredFields(appointment, ['barber_id', 'service_id', 'appointment_time']);
-  validateDate(appointment.appointment_time);
-  return true;
-};
-
 module.exports = {
   validateEmail,
   validatePhone,
@@ -129,11 +72,5 @@ module.exports = {
   validateDayOfWeek,
   validatePrice,
   validateDuration,
-  validateRequiredFields,
-  validateRole,
-  validateAppointmentStatus,
-  validateAvailability,
-  validateUserInput,
-  validateServiceInput,
-  validateAppointmentInput
+  validateRequiredFields
 };
