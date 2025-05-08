@@ -4,12 +4,12 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 
 ## 🚀 Features
 
-- **User Authentication** (Register/Login with JWT)
+- **Third-party Authentication** (Auth0 integration with JWT)
 - **Barbershop Management** (CRUD operations for barbershops and services)
 - **Appointment Booking System** (Schedule, update, and cancel appointments)
-- **Sequelize ORM** for database interactions
-- **Middleware for Authentication**
-- **.env Support** for environment variables
+- **Sequelize ORM** for PostgreSQL interactions
+- **Authorization Middleware** with Auth0
+- **Environment Configuration** with dotenv
 
 ## 📁 Folder Structure
 
@@ -18,7 +18,7 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 ├── seeders/
 ├── app/
 │   ├── config/
-│   │   ├── config.json                  # Sequelize configuration for different environments
+│   │   ├── config.js                    # Sequelize and environment configuration
 │   ├── controllers/
 |   │   ├── v1/
 │   │   │   ├── authController.js       # Handles user authentication (register, login)
@@ -39,11 +39,14 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 │   |   ├── barbershopOpenDays.js
 │   |   ├── barberServices.js
 │   ├── routes/
-│   │   ├── index.js		    # List routes
-│   │   ├── authRoutes.js           # Defines authentication routes (login, register)
-│   │   ├── barbershopRoutes.js     # Defines barbershop management routes
-│   │   ├── appointmentRoutes.js    # Defines appointment-related routes
-│   │   ├── userRoutes.js           # Defines user-related routes
+│   │   ├── index.js                 # Route aggregator
+│   │   ├── v1/
+│   │   │   ├── auth.routes.js      # Defines authentication routes
+│   │   │   ├── barbershop.routes.js # Defines barbershop management routes
+│   │   │   ├── appointment.routes.js # Defines appointment-related routes
+│   │   │   ├── user.routes.js      # Defines user-related routes
+│   │   │   ├── barber.routes.js    # Defines barber management routes
+│   │   │   ├── service.routes.js   # Defines service management routes
 │   ├── express.js                  # Initializes Express app, applies middleware, sets up routes
 ├── .env                              # Stores environment variables like DB credentials, JWT secret
 ├── .gitignore                        # Ignores node_modules, .env, etc.
@@ -73,7 +76,7 @@ npm install
 cp .env.example .env
 ```
 
-Modify `.env` with your database and JWT secret configurations.
+Modify `.env` with your database credentials and Auth0 configuration.
 
 4. **Setup PostgreSQL Database**
 
@@ -103,19 +106,41 @@ npm start    # For production mode
 ## 🔥 API Endpoints
 
 ### **Authentication**
+- `GET /api/v1/auth/login` → Initiate Auth0 login flow
+- `GET /api/v1/auth/callback` → Handle Auth0 callback
 
-- `POST /api/v1/auth/register` → Register a new user
-- `POST /api/v1/auth/login` → Authenticate and get JWT token
+### **Users**
+- `GET /api/v1/users` → List all users (Admin only)
+- `GET /api/v1/users/:id` → Get user details
+- `PUT /api/v1/users/:id` → Update user profile
 
 ### **Barbershops**
+- `GET /api/v1/barbershops` → List all barbershops
+- `GET /api/v1/barbershops/:id` → Get barbershop details
+- `POST /api/v1/barbershops` → Create a barbershop (Admin only)
+- `PUT /api/v1/barbershops/:id` → Update barbershop (Admin only)
+- `DELETE /api/v1/barbershops/:id` → Delete barbershop (Admin only)
 
-- `GET /api/v1/barbershops` → Get all barbershops
-- `POST /api/v1/barbershops` → Add a new barbershop (Admin only)
+### **Barbers**
+- `GET /api/v1/barbers` → List all barbers
+- `GET /api/v1/barbers/:id` → Get barber details
+- `POST /api/v1/barbers` → Add a barber (Admin only)
+- `PUT /api/v1/barbers/:id` → Update barber details
+- `DELETE /api/v1/barbers/:id` → Remove barber (Admin only)
+
+### **Services**
+- `GET /api/v1/services` → List all services
+- `GET /api/v1/services/:id` → Get service details
+- `POST /api/v1/services` → Add a service (Admin only)
+- `PUT /api/v1/services/:id` → Update service
+- `DELETE /api/v1/services/:id` → Remove service (Admin only)
 
 ### **Appointments**
-
+- `GET /api/v1/appointments` → List user's appointments
+- `GET /api/v1/appointments/:id` → Get appointment details
 - `POST /api/v1/appointments` → Book an appointment
-- `DELETE /api/v1/appointments/:id` → Cancel an appointment
+- `PUT /api/v1/appointments/:id` → Update appointment
+- `DELETE /api/v1/appointments/:id` → Cancel appointment
 
 ## 🔄 Running Migrations
 
