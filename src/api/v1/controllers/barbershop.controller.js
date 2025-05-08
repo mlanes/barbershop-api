@@ -1,4 +1,4 @@
-const { Barbershop, BarbershopOpenDay } = require('../../../models');
+const { Barbershop, BarbershopOpenDay, Barber, sequelize } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
 const { validateRequiredFields, validateEmail, validatePhone } = require('../validators/common');
@@ -46,6 +46,8 @@ const getBarbershopById = async (req, res, next) => {
  * Create a new barbershop
  */
 const createBarbershop = async (req, res, next) => {
+  const transaction = await sequelize.transaction();
+  
   try {
     const { name, address, email, phone, open_days } = req.body;
     
@@ -75,7 +77,7 @@ const createBarbershop = async (req, res, next) => {
       address,
       email,
       phone
-    });
+    }, { transaction });
     
     // Create open days if provided
     if (open_days && open_days.length > 0) {
@@ -86,10 +88,22 @@ const createBarbershop = async (req, res, next) => {
         closing_time: day.closing_time
       }));
       
-      await BarbershopOpenDay.bulkCreate(openDaysData);
+      await BarbershopOpenDay.bulkCreate(openDaysData, { transaction });
     }
+
+    // Add owner as a barber in the barbershop
+    await Barber.create({
+      user_id: req.user.id,
+      barbershop_id: barbershop.id,
+      is_active: true
+    }, { transaction });
     
-    logger.info('Barbershop created successfully', { barbershopId: barbershop.id });
+    await transaction.commit();
+    
+    logger.info('Barbershop created successfully', { 
+      barbershopId: barbershop.id,
+      ownerId: req.user.id 
+    });
     
     // Get the complete barbershop with associations
     const createdBarbershop = await Barbershop.findByPk(barbershop.id, {
@@ -98,6 +112,7 @@ const createBarbershop = async (req, res, next) => {
     
     createdResponse(res, createdBarbershop, 'Barbershop created successfully');
   } catch (error) {
+    await transaction.rollback();
     next(error);
   }
 };
