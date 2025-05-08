@@ -1,3 +1,5 @@
+const env = require('../config/env');
+
 const logger = {
     info: (message, meta = {}) => {
         console.log(JSON.stringify({ level: 'info', message, ...meta }));
@@ -9,7 +11,7 @@ const logger = {
         console.warn(JSON.stringify({ level: 'warn', message, ...meta }));
     },
     debug: (message, meta = {}) => {
-        if (process.env.NODE_ENV !== 'production') {
+        if (env.NODE_ENV !== 'production') {
             console.debug(JSON.stringify({ level: 'debug', message, ...meta }));
         }
     }

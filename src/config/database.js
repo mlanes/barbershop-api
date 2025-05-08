@@ -1,5 +1,6 @@
 const path = require('path');
 const env = require('./env');
+const logger = require('../utils/logger');
 const rootPath = path.normalize(__dirname + '/../..');
 
 const config = {
@@ -11,7 +12,8 @@ const config = {
       ssl: false,
     },
     use_env_variable: 'DB_URL',
-    logging: false,
+    // logging: msg => logger.debug(msg),
+    sync: { alter: true },
   },
   development: {
     dialect: env.DB_DIALECT,
@@ -21,7 +23,8 @@ const config = {
       ssl: false,
     },
     use_env_variable: 'DB_URL',
-    logging: false,
+    // logging: msg => logger.debug(msg),
+    sync: { alter: true },
   },
   production: {
     dialect: env.DB_DIALECT,
@@ -32,6 +35,7 @@ const config = {
     },
     use_env_variable: 'DB_URL',
     logging: false,
+    sync: false, // Don't auto-sync in production
   }
 };
 

@@ -25,9 +25,9 @@ const validateDate = (date) => {
 };
 
 const validateTime = (time) => {
-  const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
   if (!time || !timeRegex.test(time)) {
-    throw ApiError.badRequest('Invalid time format (should be HH:MM)');
+    throw ApiError.badRequest('Invalid time format (should be HH:MM:SS)');
   }
   return true;
 };

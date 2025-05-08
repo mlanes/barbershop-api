@@ -3,7 +3,7 @@ const { sequelize } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
 const { successResponse, createdResponse } = require('../../../utils/response');
-const { validateRequiredFields } = require('../../../utils/validators');
+const { validateRequiredFields } = require('../validators/common');
 
 /**
  * Get all barbers for a barbershop

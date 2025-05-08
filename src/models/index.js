@@ -2,18 +2,25 @@ const fs = require('fs');
 const path = require('path');
 const { Sequelize } = require('sequelize');
 const config = require('../config/database');
+const logger = require('../utils/logger');
+const env = require('../config/env');
 const basename = path.basename(__filename);
 
-const environment = process.env.NODE_ENV || 'development';
+const environment = env.NODE_ENV || 'development';
 const dbConfig = config[environment];
 
 const sequelize = new Sequelize(dbConfig.db, {
   dialect: dbConfig.dialect,
   logging: dbConfig.logging,
   ssl: dbConfig.dialectOptions.ssl,
-  define: { underscored: true },
+  define: { 
+    underscored: true,
+    paranoid: true, // Enable soft deletes
+    timestamps: true, // Enable timestamps
+  },
   pool: {
     max: 32,
+    min: 1,
     idle: 30000,
     acquire: 300000,
   },
@@ -31,6 +38,7 @@ fs
     file.slice(-3) === '.js'
   ))
   .forEach(file => {
+    // logger.debug(`Loading model: ${file}`);
     const defineModel = require(path.join(entitiesPath, file));
     const model = defineModel(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
@@ -39,7 +47,10 @@ fs
 // 2. Run all `associate()` methods to hook up relationships
 Object.values(db)
   .filter(model => typeof model.associate === 'function')
-  .forEach(model => model.associate(db));
+  .forEach(model => {
+    // logger.debug(`Setting up associations for model: ${model.name}`);
+    model.associate(db);
+  });
 
 // 3. Export
 db.sequelize = sequelize;
