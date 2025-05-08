@@ -1,4 +1,4 @@
-const { User, Role } = require('../../models');
+const { User, Role } = require('../../../models');
 
 // This controller contains placeholder methods as actual authentication
 // is handled by AWS Cognito. These methods are for user registration in our database

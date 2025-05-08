@@ -1,5 +1,5 @@
-const { Barber, User, BarberAvailability, Barbershop, Role, Service } = require('../../models');
-const { sequelize } = require('../../models');
+const { Barber, User, BarberAvailability, Barbershop, Role, Service } = require('../../../models');
+const { sequelize } = require('../../../models');
 
 /**
  * Get all barbers for a barbershop

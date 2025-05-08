@@ -1,4 +1,4 @@
-const { Service, Barbershop, BarberService, Barber, User } = require('../../models');
+const { Service, Barbershop, BarberService, Barber, User } = require('../../../models');
 
 /**
  * Get all services for a barbershop

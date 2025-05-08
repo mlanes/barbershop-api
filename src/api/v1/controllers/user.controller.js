@@ -1,4 +1,4 @@
-const { User, Role } = require('../../models');
+const { User, Role } = require('../../../models');
 
 /**
  * Create a new user with specified role (owner only)
