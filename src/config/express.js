@@ -3,7 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const routes = require('../api/v1/routes');
 const db = require('../models');
-const errorHandler = require('../utils/middlewares/error.middleware');
+const errorHandler = require('../api/v1/middlewares/error.middleware');
 const ApiError = require('../utils/errors/api-error');
 const logger = require('../utils/logger');
 

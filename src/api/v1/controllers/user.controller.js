@@ -1,7 +1,8 @@
 const { User, Role } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
-const { validateUserInput, validateRole } = require('../../../utils/validators');
+const { validateUserInput, validateRole } = require('../validators/user');
+const { successResponse, createdResponse } = require('../../../utils/response');
 
 /**
  * Create a new user with specified role (owner only)
@@ -42,15 +43,12 @@ const createUser = async (req, res, next) => {
 
     logger.info('User created successfully', { userId: newUser.id });
 
-    res.status(201).json({
-      message: 'User created successfully',
-      user: {
-        id: newUser.id,
-        full_name: newUser.full_name,
-        email: newUser.email,
-        role: role_name
-      }
-    });
+    createdResponse(res, {
+      id: newUser.id,
+      full_name: newUser.full_name,
+      email: newUser.email,
+      role: role_name
+    }, 'User created successfully');
   } catch (error) {
     next(error);
   }
@@ -75,7 +73,7 @@ const getAllUsers = async (req, res, next) => {
       created_at: user.created_at
     }));
     
-    res.json(formattedUsers);
+    successResponse(res, formattedUsers);
   } catch (error) {
     next(error);
   }
@@ -101,7 +99,7 @@ const getUserById = async (req, res, next) => {
       throw ApiError.notFound('User not found');
     }
     
-    res.json({
+    successResponse(res, {
       id: user.id,
       full_name: user.full_name,
       email: user.email,
@@ -143,16 +141,13 @@ const updateUser = async (req, res, next) => {
     
     logger.info('User updated successfully', { userId: user.id });
     
-    res.json({
-      message: 'User updated successfully',
-      user: {
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        phone: user.phone,
-        dob: user.dob
-      }
-    });
+    successResponse(res, {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      phone: user.phone,
+      dob: user.dob
+    }, 'User updated successfully');
   } catch (error) {
     next(error);
   }
@@ -187,7 +182,7 @@ const deleteUser = async (req, res, next) => {
     await user.destroy();
     logger.info('User deleted successfully', { userId: id });
     
-    res.json({ message: 'User deleted successfully' });
+    successResponse(res, null, 'User deleted successfully');
   } catch (error) {
     next(error);
   }

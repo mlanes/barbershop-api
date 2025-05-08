@@ -1,27 +1,29 @@
 const { Appointment, User, Barber, Service, BarberAvailability } = require('../../../models');
 const { Op } = require('sequelize');
+const ApiError = require('../../../utils/errors/api-error');
+const logger = require('../../../utils/logger');
+const { validateAppointmentInput, validateAppointmentStatus } = require('../validators/appointment');
+const { validateRequiredFields, validateDate } = require('../validators/common');
+const { successResponse, createdResponse } = require('../../../utils/response');
 
 /**
  * Get appointments based on user role
  */
-const getAppointments = async (req, res) => {
+const getAppointments = async (req, res, next) => {
   try {
     let where = {};
     const userRole = req.user.Role.name;
     
     // Filter appointments based on user role
     if (userRole === 'customer') {
-      // Customers can only see their own appointments
       where.customer_id = req.user.id;
     } else if (userRole === 'barber') {
-      // Barbers can only see appointments they're assigned to
       const barber = await Barber.findOne({ where: { user_id: req.user.id } });
       if (!barber) {
-        return res.status(404).json({ message: 'Barber profile not found' });
+        throw ApiError.notFound('Barber profile not found');
       }
       where.barber_id = barber.id;
     }
-    // Owners can see all appointments (no additional filter)
     
     const appointments = await Appointment.findAll({
       where,
@@ -43,17 +45,16 @@ const getAppointments = async (req, res) => {
       order: [['appointment_time', 'DESC']]
     });
     
-    res.json(appointments);
+    successResponse(res, appointments);
   } catch (error) {
-    console.error('Error fetching appointments:', error);
-    res.status(500).json({ message: 'Error fetching appointments' });
+    next(error);
   }
 };
 
 /**
  * Get appointment by ID
  */
-const getAppointmentById = async (req, res) => {
+const getAppointmentById = async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -76,36 +77,38 @@ const getAppointmentById = async (req, res) => {
     });
     
     if (!appointment) {
-      return res.status(404).json({ message: 'Appointment not found' });
+      throw ApiError.notFound('Appointment not found');
     }
     
     // Check if user is authorized to view this appointment
     const userRole = req.user.Role.name;
     
     if (userRole === 'customer' && appointment.customer_id !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to view this appointment' });
+      throw ApiError.forbidden('Not authorized to view this appointment');
     }
     
     if (userRole === 'barber') {
       const barber = await Barber.findOne({ where: { user_id: req.user.id } });
       if (!barber || appointment.barber_id !== barber.id) {
-        return res.status(403).json({ message: 'Not authorized to view this appointment' });
+        throw ApiError.forbidden('Not authorized to view this appointment');
       }
     }
     
-    res.json(appointment);
+    successResponse(res, appointment);
   } catch (error) {
-    console.error('Error fetching appointment:', error);
-    res.status(500).json({ message: 'Error fetching appointment' });
+    next(error);
   }
 };
 
 /**
  * Create a new appointment
  */
-const createAppointment = async (req, res) => {
+const createAppointment = async (req, res, next) => {
   try {
     const { barber_id, service_id, appointment_time } = req.body;
+    
+    // Validate appointment input
+    validateAppointmentInput({ barber_id, service_id, appointment_time });
     
     // Check if the slot is available
     const existingAppointment = await Appointment.findOne({
@@ -117,24 +120,24 @@ const createAppointment = async (req, res) => {
     });
     
     if (existingAppointment) {
-      return res.status(400).json({ message: 'This time slot is already booked' });
+      throw ApiError.badRequest('This time slot is already booked');
     }
     
     // Check if the service exists
     const service = await Service.findByPk(service_id);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      throw ApiError.notFound('Service not found');
     }
     
     // Check if the barber exists
     const barber = await Barber.findByPk(barber_id);
     if (!barber) {
-      return res.status(404).json({ message: 'Barber not found' });
+      throw ApiError.notFound('Barber not found');
     }
     
     // Check if the barber is available on this day/time
     const appointmentDate = new Date(appointment_time);
-    const dayOfWeek = appointmentDate.getDay(); // 0 = Sunday, 6 = Saturday
+    const dayOfWeek = appointmentDate.getDay();
     
     const barberAvailability = await BarberAvailability.findOne({
       where: {
@@ -144,7 +147,7 @@ const createAppointment = async (req, res) => {
     });
     
     if (!barberAvailability) {
-      return res.status(400).json({ message: 'Barber is not available on this day' });
+      throw ApiError.badRequest('Barber is not available on this day');
     }
     
     // Check if the appointment time is within barber's working hours
@@ -160,7 +163,7 @@ const createAppointment = async (req, res) => {
     
     if (appointmentTimeInMinutes < startTimeInMinutes || 
         appointmentTimeInMinutes + service.duration > endTimeInMinutes) {
-      return res.status(400).json({ message: 'Appointment time is outside barber working hours' });
+      throw ApiError.badRequest('Appointment time is outside barber working hours');
     }
     
     // Create appointment
@@ -170,6 +173,12 @@ const createAppointment = async (req, res) => {
       service_id,
       appointment_time,
       status: 'scheduled'
+    });
+    
+    logger.info('Appointment created', { 
+      appointmentId: appointment.id,
+      customerId: req.user.id,
+      barberId: barber_id 
     });
     
     // Fetch the complete appointment with associations
@@ -191,47 +200,44 @@ const createAppointment = async (req, res) => {
       ]
     });
     
-    res.status(201).json({
-      message: 'Appointment created successfully',
-      appointment: createdAppointment
-    });
+    createdResponse(res, createdAppointment, 'Appointment created successfully');
   } catch (error) {
-    console.error('Error creating appointment:', error);
-    res.status(500).json({ message: 'Error creating appointment' });
+    next(error);
   }
 };
 
 /**
  * Update appointment
  */
-const updateAppointment = async (req, res) => {
+const updateAppointment = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { appointment_time, service_id } = req.body;
     
+    validateRequiredFields({ appointment_time }, ['appointment_time']);
+    if (appointment_time) validateDate(appointment_time);
+    
     const appointment = await Appointment.findByPk(id);
     if (!appointment) {
-      return res.status(404).json({ message: 'Appointment not found' });
+      throw ApiError.notFound('Appointment not found');
     }
     
     // Customers can only update their own appointments
     if (req.user.Role.name === 'customer' && appointment.customer_id !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to update this appointment' });
+      throw ApiError.forbidden('Not authorized to update this appointment');
     }
     
     // Barbers can only update appointments they're assigned to
     if (req.user.Role.name === 'barber') {
       const barber = await Barber.findOne({ where: { user_id: req.user.id } });
       if (!barber || appointment.barber_id !== barber.id) {
-        return res.status(403).json({ message: 'Not authorized to update this appointment' });
+        throw ApiError.forbidden('Not authorized to update this appointment');
       }
     }
     
     // Only allow updates if appointment is still scheduled
     if (appointment.status !== 'scheduled') {
-      return res.status(400).json({ 
-        message: 'Cannot update appointment that is already completed or canceled' 
-      });
+      throw ApiError.badRequest('Cannot update appointment that is already completed or canceled');
     }
     
     // If changing time, check for conflicts
@@ -246,7 +252,7 @@ const updateAppointment = async (req, res) => {
       });
       
       if (existingAppointment) {
-        return res.status(400).json({ message: 'This time slot is already booked' });
+        throw ApiError.badRequest('This time slot is already booked');
       }
     }
     
@@ -255,6 +261,8 @@ const updateAppointment = async (req, res) => {
       appointment_time: appointment_time || appointment.appointment_time,
       service_id: service_id || appointment.service_id
     });
+    
+    logger.info('Appointment updated', { appointmentId: id });
     
     // Fetch the updated appointment with associations
     const updatedAppointment = await Appointment.findByPk(id, {
@@ -275,104 +283,96 @@ const updateAppointment = async (req, res) => {
       ]
     });
     
-    res.json({
-      message: 'Appointment updated successfully',
-      appointment: updatedAppointment
-    });
+    successResponse(res, updatedAppointment, 'Appointment updated successfully');
   } catch (error) {
-    console.error('Error updating appointment:', error);
-    res.status(500).json({ message: 'Error updating appointment' });
+    next(error);
   }
 };
 
 /**
  * Update appointment status
  */
-const updateAppointmentStatus = async (req, res) => {
+const updateAppointmentStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
     
-    if (!status || !['scheduled', 'completed', 'canceled'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status value' });
-    }
+    validateRequiredFields({ status }, ['status']);
+    validateAppointmentStatus(status);
     
     const appointment = await Appointment.findByPk(id);
     if (!appointment) {
-      return res.status(404).json({ message: 'Appointment not found' });
+      throw ApiError.notFound('Appointment not found');
     }
     
     // Only barbers and owners can change status
     if (req.user.Role.name === 'barber') {
       const barber = await Barber.findOne({ where: { user_id: req.user.id } });
       if (!barber || appointment.barber_id !== barber.id) {
-        return res.status(403).json({ message: 'Not authorized to update this appointment' });
+        throw ApiError.forbidden('Not authorized to update this appointment');
       }
     }
     
     // Update status
     await appointment.update({ status });
     
-    res.json({
-      message: 'Appointment status updated successfully',
-      appointment
+    logger.info('Appointment status updated', { 
+      appointmentId: id, 
+      newStatus: status 
     });
+    
+    successResponse(res, appointment, 'Appointment status updated successfully');
   } catch (error) {
-    console.error('Error updating appointment status:', error);
-    res.status(500).json({ message: 'Error updating appointment status' });
+    next(error);
   }
 };
 
 /**
  * Cancel appointment
  */
-const cancelAppointment = async (req, res) => {
+const cancelAppointment = async (req, res, next) => {
   try {
     const { id } = req.params;
     
     const appointment = await Appointment.findByPk(id);
     if (!appointment) {
-      return res.status(404).json({ message: 'Appointment not found' });
+      throw ApiError.notFound('Appointment not found');
     }
     
     // Customers can only cancel their own appointments
     if (req.user.Role.name === 'customer' && appointment.customer_id !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to cancel this appointment' });
+      throw ApiError.forbidden('Not authorized to cancel this appointment');
     }
     
     // Only allow cancellation if appointment is still scheduled
     if (appointment.status !== 'scheduled') {
-      return res.status(400).json({ 
-        message: 'Cannot cancel appointment that is already completed or canceled' 
-      });
+      throw ApiError.badRequest('Cannot cancel appointment that is already completed or canceled');
     }
     
     // Update status to canceled
     await appointment.update({ status: 'canceled' });
     
-    res.json({
-      message: 'Appointment canceled successfully'
-    });
+    logger.info('Appointment canceled', { appointmentId: id });
+    
+    successResponse(res, null, 'Appointment canceled successfully');
   } catch (error) {
-    console.error('Error canceling appointment:', error);
-    res.status(500).json({ message: 'Error canceling appointment' });
+    next(error);
   }
 };
 
 /**
  * Get available appointment slots
  */
-const getAvailableSlots = async (req, res) => {
+const getAvailableSlots = async (req, res, next) => {
   try {
     const { barber_id, date, service_id } = req.query;
     
-    if (!barber_id || !date) {
-      return res.status(400).json({ message: 'Barber ID and date are required' });
-    }
+    validateRequiredFields({ barber_id, date }, ['barber_id', 'date']);
+    validateDate(date);
     
     // Get the day of week from the date
     const selectedDate = new Date(date);
-    const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+    const dayOfWeek = selectedDate.getDay();
     
     // Check barber availability for this day
     const availability = await BarberAvailability.findOne({
@@ -383,10 +383,12 @@ const getAvailableSlots = async (req, res) => {
     });
     
     if (!availability) {
-      return res.json({ 
-        message: 'Barber is not available on this day',
+      return successResponse(res, { 
+        barber_id,
+        date,
+        service_id,
         available_slots: []
-      });
+      }, 'Barber is not available on this day');
     }
     
     // Get service duration
@@ -474,15 +476,14 @@ const getAvailableSlots = async (req, res) => {
       currentSlot.setMinutes(currentSlot.getMinutes() + slotInterval);
     }
     
-    res.json({
+    successResponse(res, {
       barber_id,
       date,
       service_id,
       available_slots: slots
     });
   } catch (error) {
-    console.error('Error getting available slots:', error);
-    res.status(500).json({ message: 'Error getting available slots' });
+    next(error);
   }
 };
 

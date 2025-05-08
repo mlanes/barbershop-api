@@ -2,6 +2,8 @@ require('dotenv').config();
 const { expressjwt: jwt } = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const { User, Role } = require('../../../models');
+const ApiError = require('../../../utils/errors/api-error');
+const logger = require('../../../utils/logger');
 
 const region = process.env.COGNITO_REGION;
 const poolId = process.env.COGNITO_USER_POOL_ID;
@@ -23,7 +25,7 @@ const checkJwt = jwt({
 const loadUser = async (req, res, next) => {
   try {
     if (!req.auth || !req.auth.sub) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      throw ApiError.unauthorized('User not authenticated');
     }
 
     const user = await User.findOne({
@@ -32,29 +34,27 @@ const loadUser = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      throw ApiError.notFound('User not found');
     }
 
     req.user = user;
     next();
   } catch (error) {
-    console.error('Error loading user:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    logger.error('Error loading user:', error);
+    next(ApiError.internal('Error loading user'));
   }
 };
 
 const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      throw ApiError.unauthorized('User not authenticated');
     }
 
     const userRole = req.user.Role.name;
     
     if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({ 
-        message: 'Access denied: Insufficient permissions' 
-      });
+      throw ApiError.forbidden('Access denied: Insufficient permissions');
     }
 
     next();

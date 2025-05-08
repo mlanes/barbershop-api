@@ -1,7 +1,8 @@
 const { Service, Barbershop, BarberService, Barber, User } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
-const { validateServiceInput, validateRequiredFields } = require('../../../utils/validators');
+const { validateServiceInput } = require('../validators/service');
+const { validateRequiredFields } = require('../validators/common');
 const { successResponse, createdResponse } = require('../../../utils/response');
 
 /**

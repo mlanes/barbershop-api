@@ -1,6 +1,7 @@
 const { User, Role } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
+const { successResponse, createdResponse } = require('../../../utils/response');
 
 /**
  * Register user in our database after Cognito registration
@@ -38,15 +39,12 @@ const registerUser = async (req, res, next) => {
 
     logger.info('User registered successfully', { userId: newUser.id });
 
-    res.status(201).json({
-      message: 'User registered successfully',
-      user: {
-        id: newUser.id,
-        full_name: newUser.full_name,
-        email: newUser.email,
-        role: userRole.name
-      }
-    });
+    createdResponse(res, {
+      id: newUser.id,
+      full_name: newUser.full_name,
+      email: newUser.email,
+      role: userRole.name
+    }, 'User registered successfully');
   } catch (error) {
     next(error);
   }
@@ -61,7 +59,7 @@ const getCurrentUser = async (req, res, next) => {
       throw ApiError.unauthorized('User not authenticated');
     }
     
-    res.json({
+    successResponse(res, {
       id: req.user.id,
       full_name: req.user.full_name,
       email: req.user.email,
