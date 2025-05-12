@@ -131,6 +131,16 @@ npm run dev  # For development mode
 npm start    # For production mode
 ```
 
+## 📚 API Documentation
+
+The API is documented using Swagger/OpenAPI. You can access the interactive documentation at:
+
+```
+http://localhost:3000/api-docs
+```
+
+This provides a detailed view of all endpoints, request/response schemas, and allows you to test the API directly from your browser.
+
 ## 🔥 API Endpoints
 
 ### **Authentication**
