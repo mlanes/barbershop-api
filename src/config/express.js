@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 const routes = require('../api/v1/routes');
 const db = require('../models');
 const errorHandler = require('../api/v1/middlewares/error.middleware');
@@ -15,13 +17,11 @@ const createApp = () => {
     app.use(express.json());
     app.use(morgan('dev'));
 
-    // Routes
-    app.use('/api/v1', routes);
+    // API Documentation
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-    // Health Check Route
-    app.get('/', (req, res) => {
-        res.json({ message: 'Barbershop API is running' });
-    });
+    // API Routes
+    app.use('/api/v1', routes);
 
     // Handle 404
     app.use((req, res, next) => {
