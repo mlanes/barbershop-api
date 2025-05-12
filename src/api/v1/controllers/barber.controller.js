@@ -361,7 +361,7 @@ const setBarberAvailabilityById = async (req, res, next) => {
     const { id } = req.params;
     
     validateRequiredFields({ id }, ['id']);
-    const { availabilities } = req.body;
+    const availabilities = req.body;
 
     if (!availabilities || !Array.isArray(availabilities)) {
       throw ApiError.badRequest('Availabilities must be provided as an array');
