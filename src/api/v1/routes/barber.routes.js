@@ -1,5 +1,5 @@
 const express = require('express');
-const { isAuthenticated, isOwner, isBarber } = require('../middlewares/auth.middleware');
+const { isAuthenticated, isOwner, isBarber, isOwnerOrBarber } = require('../middlewares/auth.middleware');
 const barberController = require('../controllers/barber.controller');
 
 const router = express.Router();
@@ -61,22 +61,26 @@ const router = express.Router();
  *           format: time
  *
  *     BarberAvailabilityInput:
- *       type: object
- *       required:
- *         - day_of_week
- *         - start_time
- *         - end_time
- *       properties:
- *         day_of_week:
- *           type: integer
- *           minimum: 0
- *           maximum: 6
- *         start_time:
- *           type: string
- *           format: time
- *         end_time:
- *           type: string
- *           format: time
+ *       type: array
+ *       items:
+ *         type: object
+ *         required:
+ *           - day_of_week
+ *           - start_time
+ *           - end_time
+ *         properties:
+ *           day_of_week:
+ *             type: integer
+ *             minimum: 0
+ *             maximum: 6
+ *           start_time:
+ *             type: string
+ *             format: time
+ *           end_time:
+ *             type: string
+ *             format: time
+ *       minItems: 7
+ *       maxItems: 7
  *
  *     BarberStatusUpdate:
  *       type: object
@@ -233,7 +237,7 @@ router.get('/:id/availability', barberController.getBarberAvailabilityById);
  *       404:
  *         description: Barber not found
  */
-router.post('/:id/availability', isBarber, barberController.setBarberAvailabilityById);
+router.post('/:id/availability', isOwnerOrBarber, barberController.setBarberAvailabilityById);
 
 /**
  * @swagger
