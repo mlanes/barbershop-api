@@ -6,6 +6,7 @@ const swaggerSpec = require('./swagger');
 const routes = require('../api/v1/routes');
 const db = require('../models');
 const errorHandler = require('../api/v1/middlewares/error.middleware');
+const requestTimer = require('../api/v1/middlewares/requestTimer.middleware');
 const ApiError = require('../utils/errors/api-error');
 const env = require('./env');
 
@@ -19,15 +20,18 @@ const createApp = () => {
 
     // API Documentation (development only)
     if (env.NODE_ENV !== 'production') {
-        app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+      app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     }
+
+    // Handle request processing time
+    app.use(requestTimer);
 
     // API Routes
     app.use('/api/v1', routes);
 
     // Handle 404
     app.use((req, res, next) => {
-        next(ApiError.notFound('Endpoint not found'));
+      next(ApiError.notFound('Endpoint not found', req.startTime));
     });
 
     // Error handling
