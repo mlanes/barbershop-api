@@ -48,7 +48,7 @@ const createUser = async (req, res, next) => {
       full_name: newUser.full_name,
       email: newUser.email,
       role: role_name
-    }, 'User created successfully');
+    }, req.startTime, 'User created successfully');
   } catch (error) {
     next(error);
   }
@@ -73,7 +73,7 @@ const getAllUsers = async (req, res, next) => {
       created_at: user.created_at
     }));
     
-    successResponse(res, formattedUsers);
+    successResponse(res, formattedUsers, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -107,7 +107,7 @@ const getUserById = async (req, res, next) => {
       phone: user.phone,
       role: user.Role.name,
       created_at: user.created_at
-    });
+    }, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -147,7 +147,7 @@ const updateUser = async (req, res, next) => {
       email: user.email,
       phone: user.phone,
       dob: user.dob
-    }, 'User updated successfully');
+    }, req.startTime, 'User updated successfully');
   } catch (error) {
     next(error);
   }
@@ -182,7 +182,7 @@ const deleteUser = async (req, res, next) => {
     await user.destroy();
     logger.info('User deleted successfully', { userId: id });
     
-    successResponse(res, null, 'User deleted successfully');
+    successResponse(res, null, req.startTime, 'User deleted successfully');
   } catch (error) {
     next(error);
   }

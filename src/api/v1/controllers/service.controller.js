@@ -19,7 +19,7 @@ const getServicesByBarbershop = async (req, res, next) => {
       }
     });
     
-    successResponse(res, services);
+    successResponse(res, services, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -55,7 +55,7 @@ const addService = async (req, res, next) => {
       barbershopId 
     });
     
-    createdResponse(res, service, 'Service added successfully');
+    createdResponse(res, service, req.startTime, 'Service added successfully');
   } catch (error) {
     next(error);
   }
@@ -97,7 +97,7 @@ const updateService = async (req, res, next) => {
       barbershopId 
     });
     
-    successResponse(res, service, 'Service updated successfully');
+    successResponse(res, service, req.startTime, 'Service updated successfully');
   } catch (error) {
     next(error);
   }
@@ -130,7 +130,7 @@ const deleteService = async (req, res, next) => {
       barbershopId 
     });
     
-    successResponse(res, null, 'Service deleted successfully');
+    successResponse(res, null, req.startTime, 'Service deleted successfully');
   } catch (error) {
     next(error);
   }
@@ -181,7 +181,7 @@ const assignServiceToBarber = async (req, res, next) => {
       barberId: barber_id 
     });
     
-    createdResponse(res, barberService, 'Service assigned to barber successfully');
+    createdResponse(res, barberService, req.startTime, 'Service assigned to barber successfully');
   } catch (error) {
     next(error);
   }
@@ -218,7 +218,7 @@ const getServiceById = async (req, res, next) => {
       throw ApiError.notFound('Service not found');
     }
     
-    successResponse(res, service);
+    successResponse(res, service, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -251,7 +251,7 @@ const createService = async (req, res, next) => {
     
     logger.info('Service created successfully', { serviceId: service.id });
     
-    createdResponse(res, service, 'Service created successfully');
+    createdResponse(res, service, req.startTime, 'Service created successfully');
   } catch (error) {
     next(error);
   }
@@ -282,7 +282,7 @@ const updateServiceById = async (req, res, next) => {
     
     logger.info('Service updated successfully', { serviceId: id });
     
-    successResponse(res, service, 'Service updated successfully');
+    successResponse(res, service, req.startTime, 'Service updated successfully');
   } catch (error) {
     next(error);
   }
@@ -305,7 +305,7 @@ const deleteServiceById = async (req, res, next) => {
     
     logger.info('Service deleted successfully', { serviceId: id });
     
-    successResponse(res, null, 'Service deleted successfully');
+    successResponse(res, null, req.startTime, 'Service deleted successfully');
   } catch (error) {
     next(error);
   }
@@ -350,7 +350,7 @@ const assignServiceToBarberById = async (req, res, next) => {
       barberId: barber_id 
     });
     
-    createdResponse(res, barberService, 'Service assigned to barber successfully');
+    createdResponse(res, barberService, req.startTime, 'Service assigned to barber successfully');
   } catch (error) {
     next(error);
   }
@@ -387,7 +387,7 @@ const getBarbersByService = async (req, res, next) => {
       ]
     });
     
-    successResponse(res, barbers);
+    successResponse(res, barbers, req.startTime);
   } catch (error) {
     next(error);
   }

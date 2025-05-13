@@ -45,7 +45,7 @@ const getAppointments = async (req, res, next) => {
       order: [['appointment_time', 'DESC']]
     });
     
-    successResponse(res, appointments);
+    successResponse(res, appointments, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -94,7 +94,7 @@ const getAppointmentById = async (req, res, next) => {
       }
     }
     
-    successResponse(res, appointment);
+    successResponse(res, appointment, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -200,7 +200,7 @@ const createAppointment = async (req, res, next) => {
       ]
     });
     
-    createdResponse(res, createdAppointment, 'Appointment created successfully');
+    createdResponse(res, createdAppointment, req.startTime, 'Appointment created successfully');
   } catch (error) {
     next(error);
   }
@@ -283,7 +283,7 @@ const updateAppointment = async (req, res, next) => {
       ]
     });
     
-    successResponse(res, updatedAppointment, 'Appointment updated successfully');
+    successResponse(res, updatedAppointment, req.startTime, 'Appointment updated successfully');
   } catch (error) {
     next(error);
   }
@@ -321,7 +321,7 @@ const updateAppointmentStatus = async (req, res, next) => {
       newStatus: status 
     });
     
-    successResponse(res, appointment, 'Appointment status updated successfully');
+    successResponse(res, appointment, req.startTime, 'Appointment status updated successfully');
   } catch (error) {
     next(error);
   }
@@ -354,7 +354,7 @@ const cancelAppointment = async (req, res, next) => {
     
     logger.info('Appointment canceled', { appointmentId: id });
     
-    successResponse(res, null, 'Appointment canceled successfully');
+    successResponse(res, null, req.startTime, 'Appointment canceled successfully');
   } catch (error) {
     next(error);
   }
@@ -388,7 +388,7 @@ const getAvailableSlots = async (req, res, next) => {
         date,
         service_id,
         available_slots: []
-      }, 'Barber is not available on this day');
+      }, req.startTime, 'Barber is not available on this day');
     }
     
     // Get service duration
@@ -481,7 +481,7 @@ const getAvailableSlots = async (req, res, next) => {
       date,
       service_id,
       available_slots: slots
-    });
+    }, req.startTime);
   } catch (error) {
     next(error);
   }
