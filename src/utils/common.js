@@ -5,9 +5,9 @@
  */
 const getElapsedTime = (hrStart) => {
   if (!hrStart) return null;
-  const diff = process.hrtime(hrStart);
+  const [seconds, nanoseconds] = process.hrtime(hrStart);
   return {
-    elapsedTime:  Number((diff[0] * 1e3 + diff[1] / 1e6).toFixed(3)),
+    elapsedTime:  Number((seconds * 1e3 + nanoseconds / 1e6).toFixed(3)),
     elapsedTimeUnit: 'ms'
   }
 };
