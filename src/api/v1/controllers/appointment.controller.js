@@ -1,4 +1,4 @@
-const { Appointment, User, Barber, Service, BarberAvailability } = require('../../../models');
+const { Appointment, User, Barber, Service, BarberAvailability, Branch } = require('../../../models');
 const { Op } = require('sequelize');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
@@ -40,7 +40,8 @@ const getAppointments = async (req, res, next) => {
             attributes: ['id', 'full_name', 'email', 'phone']
           }]
         },
-        { model: Service }
+        { model: Service },
+        { model: Branch }
       ],
       order: [['appointment_time', 'DESC']]
     });
@@ -105,10 +106,40 @@ const getAppointmentById = async (req, res, next) => {
  */
 const createAppointment = async (req, res, next) => {
   try {
-    const { barber_id, service_id, appointment_time } = req.body;
+    const { branch_id, barber_id, service_id, appointment_time } = req.body;
     
     // Validate appointment input
-    validateAppointmentInput({ barber_id, service_id, appointment_time });
+    validateAppointmentInput({ branch_id, barber_id, service_id, appointment_time });
+    
+    // Check if branch exists
+    const branch = await Branch.findByPk(branch_id);
+    if (!branch) {
+      throw ApiError.notFound('Branch not found');
+    }
+
+    // Check if the barber exists and belongs to the branch
+    const barber = await Barber.findOne({
+      where: { 
+        id: barber_id,
+        branch_id,
+        is_active: true
+      }
+    });
+    if (!barber) {
+      throw ApiError.notFound('Barber not found or not associated with this branch');
+    }
+
+    // Check if the service exists and belongs to the branch
+    const service = await Service.findOne({
+      where: {
+        id: service_id,
+        branch_id,
+        is_active: true
+      }
+    });
+    if (!service) {
+      throw ApiError.notFound('Service not found or not available at this branch');
+    }
     
     // Check if the slot is available
     const existingAppointment = await Appointment.findOne({
@@ -121,18 +152,6 @@ const createAppointment = async (req, res, next) => {
     
     if (existingAppointment) {
       throw ApiError.badRequest('This time slot is already booked');
-    }
-    
-    // Check if the service exists
-    const service = await Service.findByPk(service_id);
-    if (!service) {
-      throw ApiError.notFound('Service not found');
-    }
-    
-    // Check if the barber exists
-    const barber = await Barber.findByPk(barber_id);
-    if (!barber) {
-      throw ApiError.notFound('Barber not found');
     }
     
     // Check if the barber is available on this day/time
@@ -168,6 +187,7 @@ const createAppointment = async (req, res, next) => {
     
     // Create appointment
     const appointment = await Appointment.create({
+      branch_id,
       customer_id: req.user.id,
       barber_id,
       service_id,
@@ -365,10 +385,42 @@ const cancelAppointment = async (req, res, next) => {
  */
 const getAvailableSlots = async (req, res, next) => {
   try {
-    const { barber_id, date, service_id } = req.query;
+    const { branch_id, barber_id, date, service_id } = req.query;
     
-    validateRequiredFields({ barber_id, date }, ['barber_id', 'date']);
+    validateRequiredFields({ branch_id, barber_id, date }, ['branch_id', 'barber_id', 'date']);
     validateDate(date);
+
+    // Check if branch exists
+    const branch = await Branch.findByPk(branch_id);
+    if (!branch) {
+      throw ApiError.notFound('Branch not found');
+    }
+
+    // Check if barber belongs to branch
+    const barber = await Barber.findOne({
+      where: { 
+        id: barber_id,
+        branch_id,
+        is_active: true
+      }
+    });
+    if (!barber) {
+      throw ApiError.notFound('Barber not found or not associated with this branch');
+    }
+
+    // If service_id provided, check if it belongs to branch
+    if (service_id) {
+      const service = await Service.findOne({
+        where: {
+          id: service_id,
+          branch_id,
+          is_active: true
+        }
+      });
+      if (!service) {
+        throw ApiError.notFound('Service not found or not available at this branch');
+      }
+    }
     
     // Get the day of week from the date
     const selectedDate = new Date(date);
