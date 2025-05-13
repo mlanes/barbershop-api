@@ -18,9 +18,7 @@ module.exports = {
         barber_id: barberId,
         day_of_week: dayOfWeek,
         start_time: '09:00:00',
-        end_time: '18:00:00',
-        created_at: new Date(),
-        updated_at: new Date()
+        end_time: '18:00:00'
       });
     }
 

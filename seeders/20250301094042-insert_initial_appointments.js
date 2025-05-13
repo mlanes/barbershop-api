@@ -4,10 +4,11 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Create appointment in downtown branch
     await queryInterface.sequelize.query(`
-      INSERT INTO appointments (customer_id, barber_id, service_id, appointment_time, status, created_at, updated_at)
+      INSERT INTO appointments (customer_id, barber_id, branch_id, service_id, appointment_time, status, created_at, updated_at)
       SELECT
         (SELECT id FROM users WHERE email = 'jane.doe@example.com'),
         b.id,
+        br.id,
         s.id,
         '2024-03-05 14:00:00',
         'scheduled',
@@ -25,10 +26,11 @@ module.exports = {
 
     // Create appointment in uptown branch
     await queryInterface.sequelize.query(`
-      INSERT INTO appointments (customer_id, barber_id, service_id, appointment_time, status, created_at, updated_at)
+      INSERT INTO appointments (customer_id, barber_id, branch_id, service_id, appointment_time, status, created_at, updated_at)
       SELECT
         (SELECT id FROM users WHERE email = 'jane.doe@example.com'),
         b.id,
+        br.id,
         s.id,
         '2024-03-06 15:00:00',
         'scheduled',
