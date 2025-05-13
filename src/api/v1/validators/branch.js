@@ -1,4 +1,3 @@
-const ApiError = require('../../../utils/errors/api-error');
 const { validateEmail, validatePhone, validateRequiredFields } = require('./common');
 
 const validateBranchInput = (input) => {

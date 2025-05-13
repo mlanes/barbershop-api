@@ -3,8 +3,8 @@ const { sequelize } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
 const { successResponse, createdResponse } = require('../../../utils/response');
-const { validateRequiredFields, validateEmail, validatePhone } = require('../validators/common');
 const { validateAvailability } = require('../validators/barbershop');
+const { validateBranchInput, validateBranchUpdate } = require('../validators/branch');
 
 /**
  * Get all branches for a barbershop
@@ -77,10 +77,8 @@ const createBranch = async (req, res, next) => {
     const { barbershopId } = req.params;
     const { name, address, email, phone, open_days } = req.body;
 
-    // Validate required fields
-    validateRequiredFields({ name, address, email, phone }, ['name', 'address', 'email', 'phone']);
-    validateEmail(email);
-    validatePhone(phone);
+    // Validate branch input
+    validateBranchInput({ name, address, email, phone });
 
     // Verify barbershop exists
     const barbershop = await Barbershop.findOne({
@@ -165,9 +163,8 @@ const updateBranch = async (req, res, next) => {
       throw ApiError.notFound('Branch not found');
     }
 
-    // Validate fields if provided
-    if (email) validateEmail(email);
-    if (phone) validatePhone(phone);
+    // Validate branch update fields
+    validateBranchUpdate({ email, phone });
 
     // Validate open days if provided
     if (open_days) {
