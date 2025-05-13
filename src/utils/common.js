@@ -1,5 +1,7 @@
 /**
- * Returns the response time in ms since startTime, or null if not set.
+ * Calculates the elapsed time since the provided high-resolution time
+ * @param {[number, number]} hrStart - The high-resolution time tuple [seconds, nanoseconds]
+ * @returns {{ elapsedTime: number, elapsedTimeUnit: string } | null} Object containing elapsed time and unit, or null if no start time
  */
 const getElapsedTime = (hrStart) => {
   if (!hrStart) return null;
