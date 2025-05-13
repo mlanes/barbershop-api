@@ -8,15 +8,15 @@ const { validateRequiredFields } = require('../validators/common');
 /**
  * Get all barbers for a barbershop
  */
-const getBarbersByBarbershop = async (req, res, next) => {
+const getBarbersByBranch = async (req, res, next) => {
   try {
-    const { barbershopId } = req.params;
+    const { branchId } = req.params;
     
-    validateRequiredFields({ barbershopId }, ['barbershopId']);
+    validateRequiredFields({ branchId }, ['branchId']);
     
     const barbers = await Barber.findAll({
       where: { 
-        barbershop_id: barbershopId, 
+        branch_id: branchId, 
         is_active: true 
       },
       include: [
@@ -39,21 +39,21 @@ const getBarbersByBarbershop = async (req, res, next) => {
 /**
  * Add a barber to a barbershop
  */
-const addBarber = async (req, res, next) => {
+const addBarberToBranch = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   
   try {
-    const { barbershopId } = req.params;
+    const { branchId } = req.params;
     const { user_id, availabilities } = req.body;
 
     if (!user_id) {
       throw ApiError.badRequest('User ID is required');
     }
     
-    // Verify barbershop exists
-    const barbershop = await Barbershop.findByPk(barbershopId, { transaction });
-    if (!barbershop) {
-      throw ApiError.notFound('Barbershop not found');
+    // Verify branch exists
+    const branch = await Branch.findByPk(branchId, { transaction });
+    if (!branch) {
+      throw ApiError.notFound('Branch not found');
     }
     
     // Verify user exists
@@ -90,7 +90,7 @@ const addBarber = async (req, res, next) => {
     // Create new barber
     const barber = await Barber.create({
       user_id,
-      barbershop_id: barbershopId,
+      branch_id: branchId,
       is_active: true
     }, { transaction });
     
@@ -142,12 +142,12 @@ const addBarber = async (req, res, next) => {
  */
 const getBarberAvailability = async (req, res, next) => {
   try {
-    const { barbershopId, barberId } = req.params;
+    const { branchId, barberId } = req.params;
     
     const barber = await Barber.findOne({
       where: { 
         id: barberId,
-        barbershop_id: barbershopId,
+        branch_id: branchId,
         is_active: true
       }
     });
@@ -450,8 +450,8 @@ const getBarberServices = async (req, res, next) => {
 };
 
 module.exports = {
-  getBarbersByBarbershop,
-  addBarber,
+  getBarbersByBranch,
+  addBarberToBranch,
   getBarberAvailability,
   setBarberAvailability,
   getAllBarbers,

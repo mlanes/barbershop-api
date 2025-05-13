@@ -1,4 +1,4 @@
-const { Service, Barbershop, BarberService, Barber, User } = require('../../../models');
+const { Service, Branch, BarberService, Barber, User } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
 const { validateServiceInput } = require('../validators/service');
@@ -8,13 +8,19 @@ const { successResponse, createdResponse } = require('../../../utils/response');
 /**
  * Get all services for a barbershop
  */
-const getServicesByBarbershop = async (req, res, next) => {
+const getServicesByBranch = async (req, res, next) => {
   try {
-    const { barbershopId } = req.params;
+    const { branchId } = req.params;
+
+    // Verify branch exists
+    const branch = await Branch.findByPk(branchId);
+    if (!branch) {
+      throw ApiError.notFound('Branch not found');
+    }
     
     const services = await Service.findAll({
       where: { 
-        barbershop_id: barbershopId,
+        branch_id: branchId,
         is_active: true
       }
     });
@@ -28,18 +34,18 @@ const getServicesByBarbershop = async (req, res, next) => {
 /**
  * Add a service to a barbershop
  */
-const addService = async (req, res, next) => {
+const addServiceToBranch = async (req, res, next) => {
   try {
-    const { barbershopId } = req.params;
+    const { branchId } = req.params;
     const { name, duration, price } = req.body;
     
     // Validate input
     validateServiceInput({ name, duration, price });
     
-    // Verify barbershop exists
-    const barbershop = await Barbershop.findByPk(barbershopId);
-    if (!barbershop) {
-      throw ApiError.notFound('Barbershop not found');
+    // Verify branch exists
+    const branch = await Branch.findByPk(branchId);
+    if (!branch) {
+      throw ApiError.notFound('Branch not found');
     }
     
     // Create service
@@ -47,7 +53,7 @@ const addService = async (req, res, next) => {
       name,
       duration,
       price,
-      barbershop_id: barbershopId
+      branch_id: branchId
     });
     
     logger.info('Service added successfully', { 
@@ -66,14 +72,21 @@ const addService = async (req, res, next) => {
  */
 const updateService = async (req, res, next) => {
   try {
-    const { barbershopId, serviceId } = req.params;
+    const { branchId, serviceId } = req.params;
     const { name, duration, price } = req.body;
     
-    // Find service and ensure it belongs to the barbershop
+    // Verify branch exists
+    const branch = await Branch.findByPk(branchId);
+
+    if (!branch) {
+      throw ApiError.notFound('Branch not found');
+    }
+
+    // Find service and ensure it belongs to the branch
     const service = await Service.findOne({
       where: {
         id: serviceId,
-        barbershop_id: barbershopId
+        branch_id: branchId
       }
     });
     
@@ -108,13 +121,13 @@ const updateService = async (req, res, next) => {
  */
 const deleteService = async (req, res, next) => {
   try {
-    const { barbershopId, serviceId } = req.params;
+    const { branchId, serviceId } = req.params;
     
-    // Find service and ensure it belongs to the barbershop
+    // Find service and ensure it belongs to the branch
     const service = await Service.findOne({
       where: {
         id: serviceId,
-        barbershop_id: barbershopId
+        branch_id: branchId
       }
     });
     
@@ -141,16 +154,22 @@ const deleteService = async (req, res, next) => {
  */
 const assignServiceToBarber = async (req, res, next) => {
   try {
-    const { barbershopId, serviceId } = req.params;
+    const { branchId, serviceId } = req.params;
     const { barber_id } = req.body;
     
     validateRequiredFields({ barber_id }, ['barber_id']);
+
+    // Verify branch exists
+    const branch = await Branch.findByPk(branchId);
+    if (!branch) {
+      throw ApiError.notFound('Branch not found');
+    }
     
-    // Verify service exists and belongs to barbershop
+    // Verify service exists and belongs to branch
     const service = await Service.findOne({
       where: {
         id: serviceId,
-        barbershop_id: barbershopId
+        branch_id: branchId
       }
     });
     
@@ -158,16 +177,16 @@ const assignServiceToBarber = async (req, res, next) => {
       throw ApiError.notFound('Service not found');
     }
 
-    // Verify barber exists and belongs to barbershop
+    // Verify barber exists and belongs to branch
     const barber = await Barber.findOne({
       where: {
         id: barber_id,
-        barbershop_id: barbershopId
+        branch_id: branchId
       }
     });
 
     if (!barber) {
-      throw ApiError.notFound('Barber not found or not associated with this barbershop');
+      throw ApiError.notFound('Barber not found or not associated with this branch');
     }
     
     // Create barber-service association
@@ -394,8 +413,8 @@ const getBarbersByService = async (req, res, next) => {
 };
 
 module.exports = {
-  getServicesByBarbershop,
-  addService,
+  getServicesByBranch,
+  addServiceToBranch,
   updateService,
   deleteService,
   assignServiceToBarber,
