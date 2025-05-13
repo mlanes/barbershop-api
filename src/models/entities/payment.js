@@ -9,6 +9,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    branch_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
     amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
@@ -32,6 +36,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Payment.associate = (models) => {
     Payment.belongsTo(models.Appointment, { foreignKey: 'appointment_id' });
+    Payment.belongsTo(models.Branch, { foreignKey: 'branch_id' });
   };
 
   return Payment;

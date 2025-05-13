@@ -9,6 +9,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    branch_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
     barber_id: {
       type: DataTypes.INTEGER,
       allowNull: false
@@ -52,6 +56,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Appointment.associate = (models) => {
     Appointment.belongsTo(models.User, { foreignKey: 'customer_id', as: 'Customer' });
+    Appointment.belongsTo(models.Branch, { foreignKey: 'branch_id' });
     Appointment.belongsTo(models.Barber, { foreignKey: 'barber_id' });
     Appointment.belongsTo(models.Service, { foreignKey: 'service_id' });
     Appointment.hasOne(models.Payment, { foreignKey: 'appointment_id' });

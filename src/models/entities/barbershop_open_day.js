@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-    barbershop_id: {
+    branch_id: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   BarbershopOpenDay.associate = (models) => {
-    BarbershopOpenDay.belongsTo(models.Barbershop, { foreignKey: 'barbershop_id' });
+    BarbershopOpenDay.belongsTo(models.Branch, { foreignKey: 'branch_id' });
   };
 
   return BarbershopOpenDay;
