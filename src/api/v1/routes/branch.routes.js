@@ -1,7 +1,7 @@
 const express = require('express');
 const { getBranchesByBarbershop, getBranchById, createBranch, updateBranch, deleteBranch } = require('../controllers/branch.controller');
 const { isAuthenticated, isOwner } = require('../middlewares/auth.middleware');
-const { checkBranchExists, checkBranchAccess } = require('../middlewares/branch.middleware');
+const { checkBranchAccess } = require('../middlewares/branch.middleware');
 
 const router = express.Router();
 
@@ -216,7 +216,7 @@ router.post('/barbershops/:barbershopId/branches', isOwner, createBranch);
  *       404:
  *         description: Branch not found
  */
-router.put('/:id', isOwner, updateBranch);
+router.put('/:id', isOwner, checkBranchAccess, updateBranch);
 
 /**
  * @swagger
@@ -243,6 +243,6 @@ router.put('/:id', isOwner, updateBranch);
  *       404:
  *         description: Branch not found
  */
-router.delete('/:id', isOwner, deleteBranch);
+router.delete('/:id', isOwner, checkBranchAccess, deleteBranch);
 
 module.exports = router;
