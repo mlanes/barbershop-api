@@ -4,7 +4,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     const [barbers] = await queryInterface.sequelize.query(
-      'SELECT id FROM Barbers WHERE id = 1'
+      'SELECT id FROM barbers WHERE id = 1'
     );
     const barberId = barbers[0]?.id;
 
@@ -24,11 +24,11 @@ module.exports = {
       });
     }
 
-    await queryInterface.bulkInsert('BarberAvailabilities', availabilities);
+    await queryInterface.bulkInsert('barber_availability', availabilities);
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete('BarberAvailabilities', {
+    await queryInterface.bulkDelete('barber_availability', {
       barber_id: 1
     });
   }
