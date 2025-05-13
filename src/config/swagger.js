@@ -6,7 +6,7 @@ const options = {
     info: {
       title: 'Barbershop API',
       version: '1.0.0',
-      description: 'API for managing barbershop services, appointments, and users',
+      description: 'API for managing barbershops, their branches, services, appointments, and users',
     },
     servers: [
       {

@@ -10,7 +10,7 @@ const validateAppointmentStatus = (status) => {
 };
 
 const validateAppointmentInput = (appointment) => {
-  validateRequiredFields(appointment, ['barber_id', 'service_id', 'appointment_time']);
+  validateRequiredFields(appointment, ['branch_id', 'barber_id', 'service_id', 'appointment_time']);
   validateDate(appointment.appointment_time);
   return true;
 };
