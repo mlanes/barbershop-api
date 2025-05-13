@@ -1,5 +1,6 @@
 const express = require('express');
 const { isAuthenticated, isOwner, isBarber, isOwnerOrBarber } = require('../middlewares/auth.middleware');
+const { checkBranchAccess } = require('../middlewares/branch.middleware');
 const barberController = require('../controllers/barber.controller');
 
 const router = express.Router();
@@ -19,7 +20,7 @@ const router = express.Router();
  *           type: integer
  *         user_id:
  *           type: integer
- *         barbershop_id:
+ *         branch_id:
  *           type: integer
  *         is_active:
  *           type: boolean
@@ -34,13 +35,8 @@ const router = express.Router();
  *               type: string
  *             phone:
  *               type: string
- *         Barbershop:
- *           type: object
- *           properties:
- *             id:
- *               type: integer
- *             name:
- *               type: string
+ *         Branch:
+ *           $ref: '#/components/schemas/Branch'
  *
  *     BarberAvailability:
  *       type: object
@@ -93,10 +89,85 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /branches/{branchId}/barbers:
+ *   get:
+ *     summary: Get all barbers for a branch
+ *     tags: [Barbers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: branchId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Branch ID
+ *     responses:
+ *       200:
+ *         description: List of branch barbers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Barber'
+ *       401:
+ *         description: Not authenticated
+ */
+router.get('/branches/:branchId/barbers', isAuthenticated, checkBranchAccess, barberController.getBarbersByBranch);
+
+/**
+ * @swagger
+ * /branches/{branchId}/barbers:
+ *   post:
+ *     summary: Add a barber to a branch
+ *     tags: [Barbers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: branchId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Branch ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *               availabilities:
+ *                 $ref: '#/components/schemas/BarberAvailabilityInput'
+ *     responses:
+ *       201:
+ *         description: Barber added to branch successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Barber'
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Must be an owner to add barbers
+ */
+router.post('/branches/:branchId/barbers', isOwner, checkBranchAccess, barberController.addBarberToBranch);
+
+/**
+ * @swagger
  * /barbers:
  *   get:
  *     summary: Get all barbers
  *     tags: [Barbers]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of all barbers
@@ -106,8 +177,10 @@ const router = express.Router();
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Barber'
+ *       401:
+ *         description: Not authenticated
  */
-router.get('/', barberController.getAllBarbers);
+router.get('/', isAuthenticated, barberController.getAllBarbers);
 
 /**
  * @swagger
@@ -115,6 +188,8 @@ router.get('/', barberController.getAllBarbers);
  *   get:
  *     summary: Get barber details by ID
  *     tags: [Barbers]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -129,10 +204,12 @@ router.get('/', barberController.getAllBarbers);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Barber'
+ *       401:
+ *         description: Not authenticated
  *       404:
  *         description: Barber not found
  */
-router.get('/:id', barberController.getBarberById);
+router.get('/:id', isAuthenticated, barberController.getBarberById);
 
 /**
  * @swagger
@@ -170,7 +247,7 @@ router.get('/:id', barberController.getBarberById);
  *       404:
  *         description: Barber not found
  */
-router.put('/:id/status', isOwner, barberController.updateBarberStatus);
+router.put('/:id/status', isOwner, checkBranchAccess, barberController.updateBarberStatus);
 
 /**
  * @swagger
@@ -178,6 +255,8 @@ router.put('/:id/status', isOwner, barberController.updateBarberStatus);
  *   get:
  *     summary: Get barber availability
  *     tags: [Barbers]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -194,17 +273,19 @@ router.put('/:id/status', isOwner, barberController.updateBarberStatus);
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/BarberAvailability'
+ *       401:
+ *         description: Not authenticated
  *       404:
  *         description: Barber not found
  */
-router.get('/:id/availability', barberController.getBarberAvailabilityById);
+router.get('/:id/availability', isAuthenticated, barberController.getBarberAvailabilityById);
 
 /**
  * @swagger
  * /barbers/{id}/availability:
  *   post:
  *     summary: Set barber availability
- *     description: Set working hours for a specific day of the week
+ *     description: Set working hours for each day of the week
  *     tags: [Barbers]
  *     security:
  *       - bearerAuth: []
@@ -227,7 +308,9 @@ router.get('/:id/availability', barberController.getBarberAvailabilityById);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/BarberAvailability'
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/BarberAvailability'
  *       400:
  *         description: Invalid input data
  *       401:
@@ -237,7 +320,7 @@ router.get('/:id/availability', barberController.getBarberAvailabilityById);
  *       404:
  *         description: Barber not found
  */
-router.post('/:id/availability', isOwnerOrBarber, barberController.setBarberAvailabilityById);
+router.post('/:id/availability', isOwnerOrBarber, checkBranchAccess, barberController.setBarberAvailabilityById);
 
 /**
  * @swagger
@@ -245,6 +328,8 @@ router.post('/:id/availability', isOwnerOrBarber, barberController.setBarberAvai
  *   get:
  *     summary: Get services offered by a barber
  *     tags: [Barbers]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -261,9 +346,11 @@ router.post('/:id/availability', isOwnerOrBarber, barberController.setBarberAvai
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Service'
+ *       401:
+ *         description: Not authenticated
  *       404:
  *         description: Barber not found
  */
-router.get('/:id/services', barberController.getBarberServices);
+router.get('/:id/services', isAuthenticated, barberController.getBarberServices);
 
 module.exports = router;

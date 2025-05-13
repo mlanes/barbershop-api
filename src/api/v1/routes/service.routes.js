@@ -1,5 +1,6 @@
 const express = require('express');
 const { isAuthenticated, isOwner } = require('../middlewares/auth.middleware');
+const { checkBranchAccess } = require('../middlewares/branch.middleware');
 const serviceController = require('../controllers/service.controller');
 
 const router = express.Router();
@@ -27,7 +28,7 @@ const router = express.Router();
  *         price:
  *           type: number
  *           format: float
- *         barbershop_id:
+ *         branch_id:
  *           type: integer
  *         created_at:
  *           type: string
@@ -35,6 +36,8 @@ const router = express.Router();
  *         updated_at:
  *           type: string
  *           format: date-time
+ *         Branch:
+ *           $ref: '#/components/schemas/Branch'
  *
  *     ServiceInput:
  *       type: object
@@ -68,7 +71,7 @@ const router = express.Router();
  * @swagger
  * /services:
  *   get:
- *     summary: Get all services
+ *     summary: Get all services across all branches
  *     tags: [Services]
  *     responses:
  *       200:
@@ -81,6 +84,72 @@ const router = express.Router();
  *                 $ref: '#/components/schemas/Service'
  */
 router.get('/', serviceController.getAllServices);
+
+/**
+ * @swagger
+ * /branches/{branchId}/services:
+ *   get:
+ *     summary: Get all services for a branch
+ *     tags: [Services]
+ *     parameters:
+ *       - in: path
+ *         name: branchId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Branch ID
+ *     responses:
+ *       200:
+ *         description: List of branch services
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Service'
+ *       404:
+ *         description: Branch not found
+ */
+router.get('/branches/:branchId/services', checkBranchAccess, serviceController.getServicesByBranch);
+
+/**
+ * @swagger
+ * /branches/{branchId}/services:
+ *   post:
+ *     summary: Add a service to a branch
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: branchId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Branch ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ServiceInput'
+ *     responses:
+ *       201:
+ *         description: Service added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Service'
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Must be an owner to add services
+ *       404:
+ *         description: Branch not found
+ */
+router.post('/branches/:branchId/services', isOwner, checkBranchAccess, serviceController.addServiceToBranch);
 
 /**
  * @swagger
@@ -106,36 +175,6 @@ router.get('/', serviceController.getAllServices);
  *         description: Service not found
  */
 router.get('/:id', serviceController.getServiceById);
-
-/**
- * @swagger
- * /services:
- *   post:
- *     summary: Create a new service
- *     tags: [Services]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ServiceInput'
- *     responses:
- *       201:
- *         description: Service created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Service'
- *       400:
- *         description: Invalid input data
- *       401:
- *         description: Not authenticated
- *       403:
- *         description: Must be an owner to create services
- */
-router.post('/', isOwner, serviceController.createService);
 
 /**
  * @swagger
@@ -174,7 +213,7 @@ router.post('/', isOwner, serviceController.createService);
  *       404:
  *         description: Service not found
  */
-router.put('/:id', isOwner, serviceController.updateServiceById);
+router.put('/:id', isOwner, checkBranchAccess, serviceController.updateServiceById);
 
 /**
  * @swagger
@@ -201,13 +240,14 @@ router.put('/:id', isOwner, serviceController.updateServiceById);
  *       404:
  *         description: Service not found
  */
-router.delete('/:id', isOwner, serviceController.deleteServiceById);
+router.delete('/:id', isOwner, checkBranchAccess, serviceController.deleteServiceById);
 
 /**
  * @swagger
- * /services/{id}/assign:
+ * /services/{id}/barbers:
  *   post:
  *     summary: Assign service to a barber
+ *     description: Barber must belong to the same branch as the service
  *     tags: [Services]
  *     security:
  *       - bearerAuth: []
@@ -243,9 +283,9 @@ router.delete('/:id', isOwner, serviceController.deleteServiceById);
  *       403:
  *         description: Must be an owner to assign services
  *       404:
- *         description: Service or barber not found
+ *         description: Service, barber not found, or barber not in same branch
  */
-router.post('/:id/assign', isOwner, serviceController.assignServiceToBarberById);
+router.post('/:id/barbers', isOwner, checkBranchAccess, serviceController.assignServiceToBarberById);
 
 /**
  * @swagger

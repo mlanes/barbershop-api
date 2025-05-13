@@ -1,5 +1,6 @@
 const express = require('express');
 const { isAuthenticated, isOwner, isBarber, isCustomer } = require('../middlewares/auth.middleware');
+const { checkBranchAccess } = require('../middlewares/branch.middleware');
 const appointmentController = require('../controllers/appointment.controller');
 
 const router = express.Router();
@@ -18,6 +19,8 @@ const router = express.Router();
  *         id:
  *           type: integer
  *         customer_id:
+ *           type: integer
+ *         branch_id:
  *           type: integer
  *         barber_id:
  *           type: integer
@@ -40,6 +43,8 @@ const router = express.Router();
  *               type: string
  *             phone:
  *               type: string
+ *         Branch:
+ *           $ref: '#/components/schemas/Branch'
  *         Barber:
  *           type: object
  *           properties:
@@ -69,17 +74,24 @@ const router = express.Router();
  *     AppointmentInput:
  *       type: object
  *       required:
+ *         - branch_id
  *         - barber_id
  *         - service_id
  *         - appointment_time
  *       properties:
+ *         branch_id:
+ *           type: integer
+ *           description: Branch ID
  *         barber_id:
  *           type: integer
+ *           description: Barber ID
  *         service_id:
  *           type: integer
+ *           description: Service ID
  *         appointment_time:
  *           type: string
  *           format: date-time
+ *           description: Appointment date and time
  *
  *     StatusUpdateInput:
  *       type: object
@@ -119,9 +131,15 @@ router.get('/', isAuthenticated, appointmentController.getAppointments);
  * /appointments/available-slots:
  *   get:
  *     summary: Get available appointment slots
- *     description: Get available slots for a specific barber and date
+ *     description: Get available slots for a specific barber at a branch
  *     tags: [Appointments]
  *     parameters:
+ *       - in: query
+ *         name: branch_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the branch
  *       - in: query
  *         name: barber_id
  *         required: true
@@ -148,13 +166,19 @@ router.get('/', isAuthenticated, appointmentController.getAppointments);
  *             schema:
  *               type: object
  *               properties:
+ *                 branch_id:
+ *                   type: integer
+ *                   description: Branch ID
  *                 barber_id:
  *                   type: integer
+ *                   description: Barber ID
  *                 date:
  *                   type: string
  *                   format: date
+ *                   description: Date checked
  *                 service_id:
  *                   type: integer
+ *                   description: Optional service ID
  *                 available_slots:
  *                   type: array
  *                   items:
@@ -162,6 +186,8 @@ router.get('/', isAuthenticated, appointmentController.getAppointments);
  *                     format: date-time
  *       400:
  *         description: Invalid input parameters
+ *       404:
+ *         description: Branch, barber or service not found
  */
 router.get('/available-slots', appointmentController.getAvailableSlots);
 
@@ -223,8 +249,10 @@ router.get('/:id', isAuthenticated, appointmentController.getAppointmentById);
  *         description: Not authenticated
  *       403:
  *         description: Must be a customer to book appointments
+ *       404:
+ *         description: Branch, barber or service not found
  */
-router.post('/', isCustomer, appointmentController.createAppointment);
+router.post('/', isCustomer, checkBranchAccess, appointmentController.createAppointment);
 
 /**
  * @swagger
@@ -262,9 +290,9 @@ router.post('/', isCustomer, appointmentController.createAppointment);
  *       403:
  *         description: Not authorized to update this appointment
  *       404:
- *         description: Appointment not found
+ *         description: Appointment or related resources not found
  */
-router.put('/:id', isAuthenticated, appointmentController.updateAppointment);
+router.put('/:id', isAuthenticated, checkBranchAccess, appointmentController.updateAppointment);
 
 /**
  * @swagger
@@ -304,7 +332,7 @@ router.put('/:id', isAuthenticated, appointmentController.updateAppointment);
  *       404:
  *         description: Appointment not found
  */
-router.put('/:id/status', isBarber, appointmentController.updateAppointmentStatus);
+router.put('/:id/status', isBarber, checkBranchAccess, appointmentController.updateAppointmentStatus);
 
 /**
  * @swagger
@@ -334,6 +362,6 @@ router.put('/:id/status', isBarber, appointmentController.updateAppointmentStatu
  *       404:
  *         description: Appointment not found
  */
-router.delete('/:id', isAuthenticated, appointmentController.cancelAppointment);
+router.delete('/:id', isAuthenticated, checkBranchAccess, appointmentController.cancelAppointment);
 
 module.exports = router;
