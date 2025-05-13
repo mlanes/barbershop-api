@@ -42,6 +42,5 @@ const checkBranchAccess = async (req, res, next) => {
 };
 
 module.exports = {
-  checkBranchExists,
   checkBranchAccess
 };
