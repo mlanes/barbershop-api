@@ -1,5 +1,6 @@
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
+const { getElapsedTime } = require('../../../utils/common');
 
 const errorHandler = (err, req, res, next) => {
   if (err instanceof ApiError) {
@@ -12,7 +13,8 @@ const errorHandler = (err, req, res, next) => {
 
     return res.status(err.statusCode).json({
       status: err.status,
-      message: err.message
+      message: err.message,
+      ...getElapsedTime(req.startTime)
     });
   }
 
@@ -26,7 +28,8 @@ const errorHandler = (err, req, res, next) => {
 
     return res.status(401).json({
       status: 'fail',
-      message: 'Invalid token'
+      message: 'Invalid token',
+      ...getElapsedTime(req.startTime)
     });
   }
 
@@ -40,7 +43,8 @@ const errorHandler = (err, req, res, next) => {
 
     return res.status(400).json({
       status: 'fail',
-      message: err.errors.map(e => e.message).join(', ')
+      message: err.errors.map(e => e.message).join(', '),
+      ...getElapsedTime(req.startTime)
     });
   }
 
@@ -54,7 +58,8 @@ const errorHandler = (err, req, res, next) => {
 
   return res.status(500).json({
     status: 'error',
-    message: 'Internal server error'
+    message: 'Internal server error',
+    ...getElapsedTime(req.startTime)
   });
 };
 
