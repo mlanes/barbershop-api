@@ -4,12 +4,26 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 
 ## 🚀 Features
 
-- **AWS Cognito Authentication** (Token verification)
-- **Barbershop Management** (CRUD operations for barbershops and services)
-- **Appointment Booking System** (Schedule, update, and cancel appointments)
-- **Sequelize ORM** for PostgreSQL interactions
-- **Token Verification Middleware** for Cognito JWTs
-- **Environment Configuration** with dotenv
+- **Multi-branch Barbershop Management**
+  - Barbershops can have multiple branches with their own services and barbers
+  - Branch-specific access control for owners and barbers
+  - Branch-specific service offerings and pricing
+- **Advanced Appointment System**
+  - Branch-based appointment booking
+  - Barber availability management
+  - Automatic conflict detection
+  - Role-based appointment visibility
+- **Role-based Authorization**
+  - Owner: Full access to their barbershop and branches
+  - Barber: Access to their appointments and availability
+  - Customer: Book and manage their appointments
+- **AWS Cognito Integration**
+  - Secure token-based authentication
+  - Role verification and access control
+- **Data Integrity**
+  - PostgreSQL with Sequelize ORM
+  - Database constraints and validations
+  - Transaction support for critical operations
 
 ## 📁 Folder Structure
 
@@ -19,9 +33,11 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 ├── seeders/                       # Database seed files
 │   ├── 20250301093730-insert_default_roles.js
 │   ├── 20250301093759-insert_default_users.js
-│   ├── 20250301093810-insert_initial_barber.js
 │   ├── 20250301093910-insert_initial_barbershop.js
-│   ├── 20250301093932-insert_initial_services.js
+│   ├── 20250301093915-insert_initial_branches.js
+│   ├── 20250301093920-insert_initial_services.js
+│   ├── 20250301093940-insert_initial_barber.js
+│   ├── 20250301093950-insert_initial_barber_availability.js
 │   ├── 20250301094005-insert_initial_barbershop_schedule.js
 │   └── 20250301094042-insert_initial_appointments.js
 ├── src/
@@ -36,33 +52,39 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 │   │       │   └── user.controller.js
 │   │       ├── middlewares/       # API Middlewares
 │   │       │   ├── auth.middleware.js
-│   │       │   └── error.middleware.js
+│   │       │   ├── branch.middleware.js
+│   │       │   ├── error.middleware.js
+│   │       │   └── requestTimer.middleware.js
 │   │       ├── routes/           # API Routes
 │   │       │   ├── appointment.routes.js
 │   │       │   ├── auth.routes.js
 │   │       │   ├── barber.routes.js
 │   │       │   ├── barbershop.routes.js
+│   │       │   ├── branch.routes.js
 │   │       │   ├── index.js
 │   │       │   ├── service.routes.js
 │   │       │   └── user.routes.js
 │   │       └── validators/       # Request Validators
 │   │           ├── appointment.js
 │   │           ├── barbershop.js
+│   │           ├── branch.js
 │   │           ├── common.js
 │   │           ├── service.js
 │   │           └── user.js
-│   ├── config/                   # Configuration Files
-│   │   ├── database.js          # Database configuration
+│   ├── config/                # Configuration Files
+│   │   ├── database.js         # Database configuration
 │   │   ├── env.js              # Environment variables
 │   │   └── express.js          # Express configuration
-│   ├── models/                  # Database Models
+│   │   └── swagger.js          # Swagger OPEN API configuration
+│   ├── models/                # Database Models
 │   │   ├── entities/
 │   │   │   ├── appointment.js
-│   │   │   ├── barber.js
 │   │   │   ├── barber_availability.js
 │   │   │   ├── barber_service.js
-│   │   │   ├── barbershop.js
+│   │   │   ├── barber.js
 │   │   │   ├── barbershop_open_day.js
+│   │   │   ├── barbershop.js
+│   │   │   ├── branch.js
 │   │   │   ├── payment.js
 │   │   │   ├── role.js
 │   │   │   ├── service.js
@@ -76,6 +98,7 @@ A **RESTful API** built with **Node.js**, **Express.js**, **Sequelize**, and **P
 │   ├── utils/                  # Utility Functions
 │   │   ├── errors/
 │   │   │   └── api-error.js
+│   │   ├── common.js
 │   │   ├── logger.js
 │   │   └── response.js
 │   └── app.js                  # Application Entry Point
@@ -144,40 +167,57 @@ This provides a detailed view of all endpoints, request/response schemas, and al
 ## 🔥 API Endpoints
 
 ### **Authentication**
+
 - Authentication is handled by AWS Cognito in the frontend
 - Backend verifies Cognito JWT tokens
 
 ### **Users**
+
 - `GET /api/v1/users` → List all users (Admin only)
 - `GET /api/v1/users/:id` → Get user details
 - `PUT /api/v1/users/:id` → Update user profile
 
 ### **Barbershops**
+
 - `GET /api/v1/barbershops` → List all barbershops
 - `GET /api/v1/barbershops/:id` → Get barbershop details
-- `POST /api/v1/barbershops` → Create a barbershop (Admin only)
-- `PUT /api/v1/barbershops/:id` → Update barbershop (Admin only)
-- `DELETE /api/v1/barbershops/:id` → Delete barbershop (Admin only)
+- `POST /api/v1/barbershops` → Create a barbershop (Owner only)
+- `PUT /api/v1/barbershops/:id` → Update barbershop (Owner only)
+- `DELETE /api/v1/barbershops/:id` → Delete barbershop (Owner only)
+
+### **Branches**
+
+- `GET /api/v1/barbershops/:barbershopId/branches` → List all branches of a barbershop
+- `GET /api/v1/branches/:id` → Get branch details
+- `POST /api/v1/barbershops/:barbershopId/branches` → Create a branch (Owner only)
+- `PUT /api/v1/branches/:id` → Update branch (Owner only)
+- `DELETE /api/v1/branches/:id` → Delete branch (Owner only)
 
 ### **Barbers**
-- `GET /api/v1/barbers` → List all barbers
+
+- `GET /api/v1/branches/:branchId/barbers` → List branch barbers
 - `GET /api/v1/barbers/:id` → Get barber details
-- `POST /api/v1/barbers` → Add a barber (Admin only)
-- `PUT /api/v1/barbers/:id` → Update barber details
-- `DELETE /api/v1/barbers/:id` → Remove barber (Admin only)
+- `POST /api/v1/branches/:branchId/barbers` → Add barber to branch (Owner only)
+- `PUT /api/v1/barbers/:id/status` → Update barber status (Owner only)
+- `GET /api/v1/barbers/:id/availability` → Get barber availability
+- `POST /api/v1/barbers/:id/availability` → Set barber availability (Owner/Barber)
 
 ### **Services**
-- `GET /api/v1/services` → List all services
+
+- `GET /api/v1/branches/:branchId/services` → List branch services
 - `GET /api/v1/services/:id` → Get service details
-- `POST /api/v1/services` → Add a service (Admin only)
-- `PUT /api/v1/services/:id` → Update service
-- `DELETE /api/v1/services/:id` → Remove service (Admin only)
+- `POST /api/v1/branches/:branchId/services` → Add service to branch (Owner only)
+- `PUT /api/v1/services/:id` → Update service (Owner only)
+- `DELETE /api/v1/services/:id` → Remove service (Owner only)
 
 ### **Appointments**
-- `GET /api/v1/appointments` → List user's appointments
+
+- `GET /api/v1/appointments` → List user's appointments (filtered by role)
 - `GET /api/v1/appointments/:id` → Get appointment details
-- `POST /api/v1/appointments` → Book an appointment
+- `GET /api/v1/appointments/available-slots` → Get available appointment slots
+- `POST /api/v1/appointments` → Book an appointment (Customer only)
 - `PUT /api/v1/appointments/:id` → Update appointment
+- `PUT /api/v1/appointments/:id/status` → Update appointment status (Barber/Owner only)
 - `DELETE /api/v1/appointments/:id` → Cancel appointment
 
 ## 🔄 Running Migrations
