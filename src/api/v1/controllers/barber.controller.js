@@ -1,4 +1,4 @@
-const { Barber, User, BarberAvailability, Barbershop, Role, Service } = require('../../../models');
+const { Barber, User, BarberAvailability, Branch, Role, Service } = require('../../../models');
 const { sequelize } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
@@ -173,18 +173,18 @@ const setBarberAvailability = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   
   try {
-    const { barbershopId, barberId } = req.params;
+    const { branchId, barberId } = req.params;
     const { availabilities } = req.body;
 
     if (!availabilities || !Array.isArray(availabilities)) {
       throw ApiError.badRequest('Availabilities must be provided as an array');
     }
     
-    // Verify barber exists and belongs to the barbershop
+    // Verify barber exists and belongs to the branch
     const barber = await Barber.findOne({
       where: { 
         id: barberId, 
-        barbershop_id: barbershopId 
+        branch_id: branchId 
       },
       transaction
     });
@@ -248,7 +248,7 @@ const getAllBarbers = async (req, res, next) => {
           attributes: ['id', 'full_name', 'email', 'phone']
         },
         {
-          model: Barbershop,
+          model: Branch,
           attributes: ['id', 'name', 'address']
         }
       ]
