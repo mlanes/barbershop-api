@@ -8,11 +8,11 @@ const { successResponse, createdResponse } = require('../../../utils/response');
  */
 const registerUser = async (req, res, next) => {
   try {
-    const { full_name, email, cognito_sub, dob, phone } = req.body;
+    const { full_name, email, cognito_sub, dob, phone, role } = req.body;
 
     // Validate required fields
-    if (!full_name || !email || !cognito_sub) {
-      throw ApiError.badRequest('Name, email and Cognito sub are required');
+    if (!full_name || !email || !cognito_sub || !role) {
+      throw ApiError.badRequest('Name, email, role, and Cognito sub are required');
     }
 
     // Check if user already exists
@@ -21,10 +21,14 @@ const registerUser = async (req, res, next) => {
       throw ApiError.badRequest('User already exists');
     }
 
+    if (!['owner', 'customer'].includes(role)) {
+      throw ApiError.badRequest('Invalid Role to register a user');
+    }
+
     // Get role ID
-    const userRole = await Role.findOne({ where: { name: 'customer' } });
+    const userRole = await Role.findOne({ where: { name: role } });
     if (!userRole) {
-      throw ApiError.internal('Customer role not found');
+      throw ApiError.internal('Role not found');
     }
 
     // Create new user
@@ -44,7 +48,7 @@ const registerUser = async (req, res, next) => {
       full_name: newUser.full_name,
       email: newUser.email,
       role: userRole.name
-    }, 'User registered successfully');
+    }, req.startTime, 'User registered successfully');
   } catch (error) {
     next(error);
   }
@@ -66,7 +70,7 @@ const getCurrentUser = async (req, res, next) => {
       dob: req.user.dob,
       phone: req.user.phone,
       role: req.user.Role.name
-    });
+    }, req.startTime);
   } catch (error) {
     next(error);
   }

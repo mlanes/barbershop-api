@@ -30,7 +30,7 @@ const getBarbersByBarbershop = async (req, res, next) => {
       ]
     });
     
-    successResponse(res, barbers);
+    successResponse(res, barbers, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -130,7 +130,7 @@ const addBarber = async (req, res, next) => {
       ]
     });
     
-    createdResponse(res, createdBarber, 'Barber added successfully');
+    createdResponse(res, createdBarber, req.startTime, 'Barber added successfully');
   } catch (error) {
     await transaction.rollback();
     next(error);
@@ -160,7 +160,7 @@ const getBarberAvailability = async (req, res, next) => {
       where: { barber_id: barberId }
     });
     
-    successResponse(res, availability);
+    successResponse(res, availability, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -228,7 +228,7 @@ const setBarberAvailability = async (req, res, next) => {
       where: { barber_id: barberId }
     });
     
-    successResponse(res, updatedAvailability, 'Barber availability updated successfully');
+    successResponse(res, updatedAvailability, req.startTime, 'Barber availability updated successfully');
   } catch (error) {
     await transaction.rollback();
     next(error);
@@ -254,7 +254,7 @@ const getAllBarbers = async (req, res, next) => {
       ]
     });
     
-    successResponse(res, barbers);
+    successResponse(res, barbers, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -289,7 +289,7 @@ const getBarberById = async (req, res, next) => {
       throw ApiError.notFound('Barber not found');
     }
     
-    successResponse(res, barber);
+    successResponse(res, barber, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -321,7 +321,7 @@ const updateBarberStatus = async (req, res, next) => {
       newStatus: is_active 
     });
     
-    successResponse(res, barber, `Barber ${is_active ? 'activated' : 'deactivated'} successfully`);
+    successResponse(res, barber, req.startTime, `Barber ${is_active ? 'activated' : 'deactivated'} successfully`);
   } catch (error) {
     next(error);
   }
@@ -345,7 +345,7 @@ const getBarberAvailabilityById = async (req, res, next) => {
       where: { barber_id: id }
     });
     
-    successResponse(res, availability);
+    successResponse(res, availability, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -386,7 +386,7 @@ const setBarberAvailabilityById = async (req, res, next) => {
 
     // Validate availability data
     availabilities.forEach(avail => {
-      if (!avail.day_of_week || !avail.start_time || !avail.end_time) {
+      if (avail.day_of_week === null || avail.day_of_week === undefined || !avail.start_time || !avail.end_time) {
         throw ApiError.badRequest('Each availability must include day_of_week, start_time, and end_time');
       }
     });
@@ -414,7 +414,7 @@ const setBarberAvailabilityById = async (req, res, next) => {
       where: { barber_id: id }
     });
     
-    successResponse(res, updatedAvailability, 'Barber availability updated successfully');
+    successResponse(res, updatedAvailability, req.startTime, 'Barber availability updated successfully');
   } catch (error) {
     await transaction.rollback();
     next(error);
@@ -443,7 +443,7 @@ const getBarberServices = async (req, res, next) => {
       }]
     });
     
-    successResponse(res, services);
+    successResponse(res, services, req.startTime);
   } catch (error) {
     next(error);
   }
