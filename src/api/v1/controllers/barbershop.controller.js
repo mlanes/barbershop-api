@@ -15,7 +15,7 @@ const getAllBarbershops = async (req, res, next) => {
       include: [{ model: BarbershopOpenDay }]
     });
     
-    successResponse(res, barbershops);
+    successResponse(res, barbershops, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -36,7 +36,7 @@ const getBarbershopById = async (req, res, next) => {
       throw ApiError.notFound('Barbershop not found');
     }
     
-    successResponse(res, barbershop);
+    successResponse(res, barbershop, req.startTime);
   } catch (error) {
     next(error);
   }
@@ -110,7 +110,7 @@ const createBarbershop = async (req, res, next) => {
       include: [{ model: BarbershopOpenDay }]
     });
     
-    createdResponse(res, createdBarbershop, 'Barbershop created successfully');
+    createdResponse(res, createdBarbershop, req.startTime, 'Barbershop created successfully');
   } catch (error) {
     await transaction.rollback();
     next(error);
@@ -180,7 +180,7 @@ const updateBarbershop = async (req, res, next) => {
       include: [{ model: BarbershopOpenDay }]
     });
     
-    successResponse(res, updatedBarbershop, 'Barbershop updated successfully');
+    successResponse(res, updatedBarbershop, req.startTime, 'Barbershop updated successfully');
   } catch (error) {
     next(error);
   }
@@ -203,7 +203,7 @@ const deleteBarbershop = async (req, res, next) => {
     
     logger.info('Barbershop deleted successfully', { barbershopId: id });
     
-    successResponse(res, null, 'Barbershop deleted successfully');
+    successResponse(res, null, req.startTime, 'Barbershop deleted successfully');
   } catch (error) {
     next(error);
   }
