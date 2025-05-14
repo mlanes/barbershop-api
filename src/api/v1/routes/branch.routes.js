@@ -101,7 +101,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /barbershops/{barbershopId}/branches:
+ * /branches/barbershops/{barbershopId}:
  *   get:
  *     summary: Get all branches for a barbershop
  *     tags: [Branches]
@@ -126,7 +126,7 @@ const router = express.Router();
  *       401:
  *         description: Not authenticated
  */
-router.get('/barbershops/:barbershopId/branches', isAuthenticated, getBranchesByBarbershop);
+router.get('/barbershops/:barbershopId', isAuthenticated, getBranchesByBarbershop);
 
 /**
  * @swagger
@@ -159,7 +159,7 @@ router.get('/:id', isAuthenticated, getBranchById);
 
 /**
  * @swagger
- * /barbershops/{barbershopId}/branches:
+ * /branches/barbershops/{barbershopId}:
  *   post:
  *     summary: Create a new branch
  *     tags: [Branches]
@@ -192,7 +192,7 @@ router.get('/:id', isAuthenticated, getBranchById);
  *       403:
  *         description: Must be an owner to create branches
  */
-router.post('/barbershops/:barbershopId/branches', isOwner, createBranch);
+router.post('/barbershops/:barbershopId', isOwner, createBranch);
 
 /**
  * @swagger

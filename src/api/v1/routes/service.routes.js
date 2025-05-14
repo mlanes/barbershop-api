@@ -87,7 +87,7 @@ router.get('/', serviceController.getAllServices);
 
 /**
  * @swagger
- * /branches/{branchId}/services:
+ * /services/branches/{branchId}:
  *   get:
  *     summary: Get all services for a branch
  *     tags: [Services]
@@ -110,11 +110,11 @@ router.get('/', serviceController.getAllServices);
  *       404:
  *         description: Branch not found
  */
-router.get('/branches/:branchId/services', checkBranchAccess, serviceController.getServicesByBranch);
+router.get('/branches/:branchId', isAuthenticated, checkBranchAccess, serviceController.getServicesByBranch);
 
 /**
  * @swagger
- * /branches/{branchId}/services:
+ * /services/branches/{branchId}:
  *   post:
  *     summary: Add a service to a branch
  *     tags: [Services]
@@ -149,7 +149,7 @@ router.get('/branches/:branchId/services', checkBranchAccess, serviceController.
  *       404:
  *         description: Branch not found
  */
-router.post('/branches/:branchId/services', isOwner, checkBranchAccess, serviceController.addServiceToBranch);
+router.post('/branches/:branchId', isOwner, checkBranchAccess, serviceController.addServiceToBranch);
 
 /**
  * @swagger
