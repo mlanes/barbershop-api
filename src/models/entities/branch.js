@@ -52,6 +52,7 @@ module.exports = (sequelize, DataTypes) => {
     Branch.belongsTo(models.Barbershop, { foreignKey: 'barbershop_id' });
     Branch.hasMany(models.Barber, { foreignKey: 'branch_id' });
     Branch.hasMany(models.BarbershopOpenDay, { foreignKey: 'branch_id' });
+    Branch.hasMany(models.Service, { foreignKey: 'branch_id' });
   };
 
   return Branch;

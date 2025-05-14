@@ -1,4 +1,4 @@
-const { Barbershop, BarbershopOpenDay, Barber, sequelize } = require('../../../models');
+const { Barbershop, Branch, Barber, Service, BarbershopOpenDay, sequelize } = require('../../../models');
 const ApiError = require('../../../utils/errors/api-error');
 const logger = require('../../../utils/logger');
 const { validateRequiredFields, validateEmail, validatePhone } = require('../validators/common');
@@ -12,7 +12,16 @@ const getAllBarbershops = async (req, res, next) => {
   try {
     const barbershops = await Barbershop.findAll({
       where: { is_active: true },
-      include: [{ model: BarbershopOpenDay }]
+      include: [{ 
+        model: Branch,
+        where: { is_active: true },
+        required: false,
+        include: [{
+          model: Service,
+          where: { is_active: true },
+          required: false
+        }]
+      }]
     });
     
     successResponse(res, barbershops, req.startTime);
@@ -29,7 +38,16 @@ const getBarbershopById = async (req, res, next) => {
     const { id } = req.params;
     
     const barbershop = await Barbershop.findByPk(id, {
-      include: [{ model: BarbershopOpenDay }]
+      include: [{ 
+        model: Branch,
+        where: { is_active: true },
+        required: false,
+        include: [{
+          model: Service,
+          where: { is_active: true },
+          required: false
+        }]
+      }]
     });
     
     if (!barbershop) {
@@ -78,11 +96,21 @@ const createBarbershop = async (req, res, next) => {
       email,
       phone
     }, { transaction });
-    
-    // Create open days if provided
+
+    // Create main branch with provided details
+    const mainBranch = await Branch.create({
+      barbershop_id: barbershop.id,
+      name: `${name} - Main Branch`,
+      address,
+      email,
+      phone,
+      is_active: true
+    }, { transaction });
+
+    // Create open days for the main branch if provided
     if (open_days && open_days.length > 0) {
       const openDaysData = open_days.map(day => ({
-        barbershop_id: barbershop.id,
+        branch_id: mainBranch.id,
         day_of_week: day.day_of_week,
         opening_time: day.opening_time,
         closing_time: day.closing_time
@@ -91,23 +119,33 @@ const createBarbershop = async (req, res, next) => {
       await BarbershopOpenDay.bulkCreate(openDaysData, { transaction });
     }
 
-    // Add owner as a barber in the barbershop
+    // Add owner as a barber in the main branch
     await Barber.create({
       user_id: req.user.id,
-      barbershop_id: barbershop.id,
+      branch_id: mainBranch.id,
       is_active: true
     }, { transaction });
     
     await transaction.commit();
     
-    logger.info('Barbershop created successfully', { 
+    logger.info('Barbershop and main branch created successfully', { 
       barbershopId: barbershop.id,
+      branchId: mainBranch.id,
       ownerId: req.user.id 
     });
     
     // Get the complete barbershop with associations
     const createdBarbershop = await Barbershop.findByPk(barbershop.id, {
-      include: [{ model: BarbershopOpenDay }]
+      include: [{ 
+        model: Branch,
+        where: { is_active: true },
+        required: false,
+        include: [{
+          model: Service,
+          where: { is_active: true },
+          required: false
+        }]
+      }]
     });
     
     createdResponse(res, createdBarbershop, req.startTime, 'Barbershop created successfully');
@@ -123,7 +161,7 @@ const createBarbershop = async (req, res, next) => {
 const updateBarbershop = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, address, email, phone, open_days } = req.body;
+    const { name, email, phone } = req.body;
     
     const barbershop = await Barbershop.findByPk(id);
     if (!barbershop) {
@@ -134,50 +172,27 @@ const updateBarbershop = async (req, res, next) => {
     if (email) validateEmail(email);
     if (phone) validatePhone(phone);
     
-    // Validate open days if provided
-    if (open_days) {
-      if (!Array.isArray(open_days)) {
-        throw ApiError.badRequest('open_days must be an array');
-      }
-
-      open_days.forEach(day => {
-        validateAvailability({
-          day_of_week: day.day_of_week,
-          start_time: day.opening_time,
-          end_time: day.closing_time
-        });
-      });
-    }
-    
     // Update barbershop fields
     await barbershop.update({
       name: name || barbershop.name,
-      address: address || barbershop.address,
       email: email || barbershop.email,
       phone: phone || barbershop.phone
     });
-    
-    // Update open days if provided
-    if (open_days && open_days.length > 0) {
-      // Remove existing open days
-      await BarbershopOpenDay.destroy({ where: { barbershop_id: id } });
-      
-      // Create new open days
-      const openDaysData = open_days.map(day => ({
-        barbershop_id: barbershop.id,
-        day_of_week: day.day_of_week,
-        opening_time: day.opening_time,
-        closing_time: day.closing_time
-      }));
-      
-      await BarbershopOpenDay.bulkCreate(openDaysData);
-    }
     
     logger.info('Barbershop updated successfully', { barbershopId: id });
     
     // Get the updated barbershop
     const updatedBarbershop = await Barbershop.findByPk(id, {
-      include: [{ model: BarbershopOpenDay }]
+      include: [{ 
+        model: Branch,
+        where: { is_active: true },
+        required: false,
+        include: [{
+          model: Service,
+          where: { is_active: true },
+          required: false
+        }]
+      }]
     });
     
     successResponse(res, updatedBarbershop, req.startTime, 'Barbershop updated successfully');
@@ -190,21 +205,33 @@ const updateBarbershop = async (req, res, next) => {
  * Delete barbershop
  */
 const deleteBarbershop = async (req, res, next) => {
+  const transaction = await sequelize.transaction();
+  
   try {
     const { id } = req.params;
     
-    const barbershop = await Barbershop.findByPk(id);
+    const barbershop = await Barbershop.findByPk(id, { transaction });
     if (!barbershop) {
       throw ApiError.notFound('Barbershop not found');
     }
     
-    // Soft delete by setting is_active to false
-    await barbershop.update({ is_active: false });
+    // Soft delete barbershop and all its branches
+    await barbershop.update({ is_active: false }, { transaction });
+    await Branch.update(
+      { is_active: false },
+      { 
+        where: { barbershop_id: id },
+        transaction
+      }
+    );
     
-    logger.info('Barbershop deleted successfully', { barbershopId: id });
+    await transaction.commit();
+    
+    logger.info('Barbershop and all branches deleted successfully', { barbershopId: id });
     
     successResponse(res, null, req.startTime, 'Barbershop deleted successfully');
   } catch (error) {
+    await transaction.rollback();
     next(error);
   }
 };

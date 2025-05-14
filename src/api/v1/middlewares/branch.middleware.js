@@ -9,7 +9,7 @@ const logger = require('../../../utils/logger');
  */
 const checkBranchAccess = async (req, res, next) => {
   try {
-    const branchId = req.params.branchId || req.params.id || req.body.branch_id;
+    const branchId = req.params.branchId || req.params.id || req.body.branch_id || req.query.branch_id;
     if (!branchId) {
       throw ApiError.badRequest('Branch ID is required');
     }
@@ -26,7 +26,10 @@ const checkBranchAccess = async (req, res, next) => {
       throw ApiError.notFound('Branch not found');
     }
 
-    const userRole = req.user.Role.name;
+    const userRole = req.user.Role?.name;
+    if (!userRole) {
+      throw ApiError.forbidden('User role not found');
+    }
 
     if (userRole === 'barber') {
       const barber = await Barber.findOne({
@@ -59,6 +62,7 @@ const checkBranchAccess = async (req, res, next) => {
         throw ApiError.forbidden('Not authorized to access this branch');
       }
     }
+    // Customers have access to all branches
 
     req.branch = branch;
     next();

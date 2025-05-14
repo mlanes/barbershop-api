@@ -44,7 +44,20 @@ const router = express.Router();
  *             phone:
  *               type: string
  *         Branch:
- *           $ref: '#/components/schemas/Branch'
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *             name:
+ *               type: string
+ *             address:
+ *               type: string
+ *             email:
+ *               type: string
+ *             phone:
+ *               type: string
+ *             is_active:
+ *               type: boolean
  *         Barber:
  *           type: object
  *           properties:
@@ -133,6 +146,8 @@ router.get('/', isAuthenticated, appointmentController.getAppointments);
  *     summary: Get available appointment slots
  *     description: Get available slots for a specific barber at a branch
  *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: branch_id
@@ -189,7 +204,7 @@ router.get('/', isAuthenticated, appointmentController.getAppointments);
  *       404:
  *         description: Branch, barber or service not found
  */
-router.get('/available-slots', appointmentController.getAvailableSlots);
+router.get('/available-slots', isAuthenticated, checkBranchAccess, appointmentController.getAvailableSlots);
 
 /**
  * @swagger
@@ -252,7 +267,7 @@ router.get('/:id', isAuthenticated, appointmentController.getAppointmentById);
  *       404:
  *         description: Branch, barber or service not found
  */
-router.post('/', isCustomer, checkBranchAccess, appointmentController.createAppointment);
+router.post('/', isAuthenticated, checkBranchAccess, appointmentController.createAppointment);
 
 /**
  * @swagger

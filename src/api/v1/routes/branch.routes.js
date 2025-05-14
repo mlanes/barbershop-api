@@ -37,10 +37,25 @@ const router = express.Router();
  *         updated_at:
  *           type: string
  *           format: date-time
- *         BarbershopOpenDays:
+ *         OpenDays:
  *           type: array
  *           items:
- *             $ref: '#/components/schemas/BarbershopOpenDay'
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *               branch_id:
+ *                 type: integer
+ *               day_of_week:
+ *                 type: integer
+ *                 minimum: 0
+ *                 maximum: 6
+ *               opening_time:
+ *                 type: string
+ *                 format: time
+ *               closing_time:
+ *                 type: string
+ *                 format: time
  *         Barbers:
  *           type: array
  *           items:
